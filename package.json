@@ -1,0 +1,48 @@
+{
+  "name": "lexora",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run src",
+    "test:e2e": "playwright test",
+    "contract": "node scripts/export-contract.mjs",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@fontsource/manrope": "^5.2.0",
+    "@fontsource/playfair-display": "^5.2.0",
+    "@react-three/fiber": "^9.4.0",
+    "@tanstack/react-query": "^5.90.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.0",
+    "three": "^0.180.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/three": "^0.180.0",
+    "@vitejs/plugin-react": "^5.1.0",
+    "eslint": "^10.14.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^7.2.0",
+    "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "packageManager": "npm@9.2.0"
+}

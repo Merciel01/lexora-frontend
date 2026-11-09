@@ -1,0 +1,213 @@
+import { test, expect, type Page, type WebSocketRoute } from "@playwright/test";
+const profile = {
+  id: "test-student",
+  name: "Étudiant contrat",
+  level: 3,
+  xp: 900,
+  nextLevelXp: 1200,
+  badges: ["Analyse"],
+  completedCount: 4,
+  averageScore: 72,
+};
+const dossier = {
+  id: "limete",
+  title: "Dossier fourni par Django",
+  domain: "Civil",
+  difficulty: "Débutant",
+  minutes: 25,
+  description: "Dossier de test contractuel",
+  facts: "Les faits viennent de la réponse REST.",
+  roleIds: ["defense"],
+  exhibits: [
+    {
+      id: "P01",
+      caseId: "limete",
+      title: "Pièce du serveur",
+      mediaType: "text",
+      content: "Texte fourni par le serveur de test.",
+      downloadAllowed: false,
+    },
+  ],
+};
+const snapshot = {
+  id: "trial-1",
+  caseId: "limete",
+  roleId: "defense",
+  step: 1,
+  entries: [
+    {
+      id: "open",
+      speaker: "Le président",
+      text: "Présentez votre argumentation.",
+    },
+  ],
+  seen: [],
+  presented: [],
+  objection: false,
+  finished: false,
+  canResume: true,
+  allowedActions: ["user_text", "present_exhibit"],
+  activeSpeaker: "president",
+  startedAt: "2026-11-09T10:00:00Z",
+  seq: 0,
+  audioCodecs: [],
+  websocketUrl: "ws://127.0.0.1:5174/ws/trial-1",
+};
+async function mock(page: Page) {
+  let signedIn = true;
+  await page.route("**/api/**", async (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    let body: unknown;
+    if (path === "/api/auth/csrf") body = { csrfToken: "test-csrf" };
+    else if (path === "/api/auth/login") {
+      expect(request.headers()["x-csrftoken"]).toBe("test-csrf");
+      signedIn = true;
+      body = { detail: "ok" };
+    } else if (path === "/api/auth/logout") {
+      signedIn = false;
+      body = { detail: "ok" };
+    } else if (path === "/api/me") {
+      if (!signedIn) {
+        await route.fulfill({ status: 401, json: { detail: "expired" } });
+        return;
+      }
+      body = profile;
+    } else if (path === "/api/roles")
+      body = [
+        {
+          id: "defense",
+          label: "Avocat de la défense",
+          description: "Rôle serveur",
+          unlocked: true,
+        },
+        {
+          id: "prosecutor",
+          label: "Ministère public",
+          unlocked: false,
+          condition: "Niveau requis",
+        },
+      ];
+    else if (path === "/api/cases")
+      body = { results: [dossier], count: 1, page: 1, pageSize: 4 };
+    else if (path === "/api/cases/limete") body = dossier;
+    else if (path === "/api/trials" && request.method() === "POST") {
+      expect(request.headers()["x-csrftoken"]).toBe("test-csrf");
+      body = snapshot;
+    } else if (path === "/api/trials")
+      body = { results: [], count: 0, page: 1, pageSize: 20 };
+    else if (path === "/api/trials/trial-1") body = snapshot;
+    else {
+      await route.fulfill({ status: 404, json: { detail: "not implemented" } });
+      return;
+    }
+    await route.fulfill({ json: body });
+  });
+  return {
+    expire: () => {
+      signedIn = false;
+    },
+  };
+}
+test("REST Django : profil, rôle, dossier et création sans fixtures", async ({
+  page,
+}) => {
+  await mock(page);
+  await page.routeWebSocket("**/ws/trial-1", () => {});
+  await page.goto("/app");
+  await expect(page.getByText("900 / 1200 XP")).toBeVisible();
+  await page.getByRole("link", { name: "Commencer une simulation" }).click();
+  await page.getByRole("link", { name: "Choisir un dossier" }).click();
+  await page.getByRole("link", { name: "Consulter le dossier" }).click();
+  await expect(
+    page.getByText("Les faits viennent de la réponse REST."),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Vérifier mon équipement" }).click();
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  await expect(page.getByText("CONNECTÉ À DJANGO")).toBeVisible();
+  await expect(page.getByLabel("Votre argumentation")).toBeEnabled();
+});
+test("WebSocket : refus, réessai idempotent et événement dédupliqué", async ({
+  page,
+}) => {
+  await mock(page);
+  const ids: string[] = [];
+  let socket: WebSocketRoute | undefined;
+  await page.routeWebSocket("**/ws/trial-1", (ws) => {
+    socket = ws;
+    ws.onMessage((raw) => {
+      const command = JSON.parse(String(raw));
+      ids.push(command.clientMessageId);
+      ws.send(
+        JSON.stringify({
+          type: "ack",
+          clientMessageId: command.clientMessageId,
+          accepted: ids.length > 1,
+          reason: "Refus temporaire du test",
+        }),
+      );
+      if (ids.length > 1) {
+        const event = JSON.stringify({
+          type: "turn",
+          eventId: "turn-1",
+          seq: 1,
+          turnId: "t1",
+          speaker: "president",
+          text: "Argument reçu une seule fois.",
+        });
+        ws.send(event);
+        ws.send(event);
+      }
+    });
+  });
+  await page.goto("/app/trials/trial-1");
+  await expect(page.getByLabel("Votre argumentation")).toBeEnabled();
+  await page.getByLabel("Votre argumentation").fill("Mon argument conservé");
+  await page.getByRole("button", { name: "Envoyer" }).click();
+  await expect(page.getByText("Refus temporaire du test")).toBeVisible();
+  await expect(page.getByLabel("Votre argumentation")).toHaveValue(
+    "Mon argument conservé",
+  );
+  await page
+    .getByLabel("Votre argumentation")
+    .fill("Un autre brouillon à conserver");
+  await page.getByRole("button", { name: "Réessayer l’envoi" }).click();
+  await expect(page.getByLabel("Votre argumentation")).toHaveValue(
+    "Un autre brouillon à conserver",
+  );
+  await expect(
+    page.getByText("Argument reçu une seule fois.", { exact: true }),
+  ).toHaveCount(1);
+  expect(ids[0]).toBe(ids[1]);
+  await socket!.close({ code: 4401, reason: "expired" });
+  await expect(
+    page.getByText("Session expirée ou accès refusé. Reconnectez-vous."),
+  ).toBeVisible();
+});
+test("session expirée redirige vers la connexion", async ({ page }) => {
+  const backend = await mock(page);
+  backend.expire();
+  await page.goto("/app");
+  await expect(
+    page.getByRole("button", { name: "Se connecter" }),
+  ).toBeVisible();
+  await page.getByLabel("Adresse e-mail").fill("demo@example.test");
+  await page.getByLabel("Mot de passe", { exact: true }).fill("test-password");
+  await page.getByRole("button", { name: "Se connecter" }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Votre prochaine plaidoirie commence ici.",
+    }),
+  ).toBeVisible();
+});
+test("panne REST ne montre jamais de faux dossiers", async ({ page }) => {
+  await mock(page);
+  await page.route("**/api/cases?**", (route) =>
+    route.fulfill({ status: 503, json: { detail: "offline" } }),
+  );
+  await page.goto("/app/simulation/cases");
+  await expect(page.getByRole("alert")).toContainText("indisponible");
+  await expect(
+    page.getByRole("heading", { name: "La parcelle de Limete" }),
+  ).toHaveCount(0);
+});

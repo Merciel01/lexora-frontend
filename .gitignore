@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env*
+!.env.example
+test-results/
+playwright-report/
+*.tsbuildinfo
+*.log
+.agents/
+.codex/
+.aws
+.DS_Store
+scripts/.contract-*.mjs
