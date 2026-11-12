@@ -55,6 +55,7 @@ const snapshot = {
 };
 async function mock(page: Page) {
   let signedIn = true;
+  let notes = "";
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
@@ -73,6 +74,11 @@ async function mock(page: Page) {
         return;
       }
       body = profile;
+    } else if (path === "/api/cases/limete/notes") {
+      if (request.method() === "PUT") notes = request.postDataJSON().text;
+      body = { text: notes };
+    } else if (path === "/api/preferences") {
+      body = { reduced: false, sound: false, subtitles: true, quality: "auto", localVoice: false, voiceUri: "", captureMode: "hold" };
     } else if (path === "/api/roles")
       body = [
         {
