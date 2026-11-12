@@ -13,3 +13,13 @@ Three.js **r182** et ses modules sont isolés dans ce document pour ne pas méla
 `manifest.json` donne les empreintes des neuf GLB originaux et du décor. Environ 38 Mo d’actifs sont conservés pour ne pas remplacer les personnages par des formes simplifiées ; qualité basse par défaut en mode auto. Les réglages haute qualité coûtent davantage de mémoire/GPU. Les requêtes d’actifs sont indépendantes et bénéficient du cache HTTP de l’hébergement.
 
 Pour réimporter les sources autorisées : `node scripts/sync-courtroom.mjs ../Skillforce_Blender` depuis la racine du dépôt. Les fichiers générés sont commités : la CI et le build n’exigent pas le dossier Blender du poste de développement. `lexora-bridge.js` est l’adaptateur maintenu dans ce dépôt ; il n’est pas écrasé par l’import.
+
+## Adaptation de l’audience Lexora
+
+Le point de vue se choisit dans la barre de la salle : vue générale, intervenant ou place de l’étudiant. Les réglages de qualité, les sous-titres et l’accès à l’explorateur sont regroupés dans « Options de la salle ». Les sous-titres sont placés sous la scène pour garder les personnages visibles, notamment sur mobile. La qualité choisie utilise les préférences locales existantes.
+
+Le chargement indique le nombre d’éléments prêts (décor et neuf personnages, pas un pourcentage d’octets). Le délai d’inactivité est de deux minutes, renouvelé uniquement à réception d’un nouvel élément ; le mode texte peut être choisi immédiatement sans perdre le brouillon de plaidoirie. Les GLB restent inchangés, environ 38 Mo : cette adaptation ne prétend pas réduire leur poids.
+
+La boucle d’affichage s’arrête pendant une pause ou lorsque le document est caché. Les tests de simulation manuelle pilotent seuls les pas de temps, sans rendu et simulation concurrents à pas nul. Les transformations et assertions de fin de cycle restent vérifiées. Les adaptations de chargement et de boucle sont aussi appliquées par l’importeur `scripts/sync-courtroom.mjs` pour être conservées lors d’une réimportation.
+
+Le canal de progression et les points de vue restent internes à l’interface 3D. Le contrat REST/WebSocket Django est inchangé. En attente du backend, utiliser `VITE_APP_MODE=demo` pour le parcours complet et les conseils simulés ; le mode serveur conserve ses erreurs explicites si Django n’est pas disponible.

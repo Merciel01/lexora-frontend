@@ -4,7 +4,7 @@ Application pédagogique de simulation de procès pour étudiants en droit. Inte
 
 **Deux modes strictement séparés :** démonstration autonome avec dossiers fictifs et scénario déterministe ; intégration Django via des adaptateurs REST/WebSocket et un contrat proposé. Aucun fournisseur IA ni backend n’est inclus dans ce dépôt. Les résultats démo ne constituent pas une évaluation juridique ou une analyse IA réelle.
 
-La salle 3D utilise désormais les neuf personnages et le décor Skillforce v27. Elle suit les événements existants de Lexora ; « Explorer la salle 3D » ouvre séparément les démonstrations de passage à la barre et les contrôles complets. Voir [l’intégration de la salle](public/courtroom/README.md). Le contrat Django reste inchangé.
+La salle 3D utilise désormais les neuf personnages et le décor Skillforce v27. Elle suit les événements existants de Lexora ; « Explorer la salle 3D » ouvre séparément les démonstrations de passage à la barre et les contrôles complets. Voir [l’intégration de la salle](public/courtroom/README.md) et [le frontend unifié en attente du backend](docs/frontend-adaptation.md). Le contrat Django reste inchangé.
 
 ![Accueil Lexora en démonstration](docs/images/home-desktop.png)
 
@@ -31,6 +31,7 @@ Le backend est séparé dans [XavierMombimbo/lexora-backend](https://github.com/
 React/Vite ci-dessous ; le mode serveur n'est pas encore connecté à ce service.
 
 - [Contrat REST, authentification, WebSocket et audio](docs/backend-contract.md).
+- [Guide IA de préparation : fonctionnement et endpoint proposé](docs/preparation-guide.md).
 - [OpenAPI proposé](docs/openapi-proposed.json), généré depuis les schémas frontend.
 - [Architecture et limites](docs/implementation-status.md).
 - [Vérifications exécutées](docs/validation.md).

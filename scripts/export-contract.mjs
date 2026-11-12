@@ -129,6 +129,26 @@ const paths = {
     ],
     get: operation("caseSchema"),
   },
+  "/cases/{id}/guide": {
+    parameters: [
+      { name: "id", in: "path", required: true, schema: { type: "string" } },
+    ],
+    post: operation("guideResponseSchema", {
+      summary: "Guide pédagogique contextualisé — proposition à valider",
+      parameters: [
+        {
+          name: "X-CSRFToken",
+          in: "header",
+          required: true,
+          schema: { type: "string" },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: { "application/json": { schema: ref("guideRequestSchema") } },
+      },
+    }),
+  },
   "/trials": {
     get: {
       responses: {
