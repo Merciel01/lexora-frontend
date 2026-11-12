@@ -2127,3 +2127,380 @@ summary {
   align-items: center;
   justify-content: center;
 }
+/* Compact preparation menus: one category and one advice step at a time. */
+.preparation-guide.panel {
+  padding: 18px 20px;
+  border: 1px solid #c8a66a70;
+  min-width: 0;
+}
+.guide-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.guide-symbol {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--navy);
+  color: var(--gold);
+}
+.guide-heading h3 {
+  font-size: 17px;
+  margin: 0;
+  line-height: 1.5;
+}
+.guide-mode {
+  display: block;
+  font-size: 10px;
+  color: var(--green);
+  line-height: 1.6;
+}
+.guide-menus {
+  display: grid;
+  gap: 0;
+}
+.guide-menu + .guide-menu {
+  border-top: 1px solid var(--line);
+}
+.guide-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+}
+.guide-menu-trigger > span {
+  flex: 1;
+}
+.guide-menu-trigger > svg:first-child {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.guide-chevron {
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.guide-menu-trigger[aria-expanded="true"] {
+  color: var(--green);
+}
+.guide-menu-trigger[aria-expanded="true"] .guide-chevron {
+  transform: rotate(180deg);
+}
+.guide-menu-panel {
+  max-height: 300px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  border-left: 2px solid var(--gold);
+  padding: 0 10px 10px 12px;
+  margin: 0 0 10px 5px;
+  overflow-wrap: anywhere;
+}
+.guide-menu-panel:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.guide-submenu {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 0;
+  margin: 0;
+}
+.guide-submenu > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  list-style: none;
+  padding: 9px 0;
+  min-height: 40px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.guide-submenu > summary::-webkit-details-marker {
+  display: none;
+}
+.guide-submenu > summary > svg {
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.guide-submenu[open] > summary > svg {
+  transform: rotate(180deg);
+}
+.guide-submenu[open] > summary {
+  color: var(--green);
+}
+.reader-aside .guide-submenu-content p {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--ink);
+  margin: 3px 0 10px;
+}
+.guide-submenu-content ul {
+  font-size: 14px;
+  line-height: 1.8;
+  padding-left: 17px;
+  margin: 5px 0 12px;
+}
+.guide-submenu-content li + li {
+  margin-top: 7px;
+}
+.guide-submenu-content .text-button {
+  color: var(--green);
+  padding: 4px 0;
+  text-align: left;
+  justify-content: flex-start;
+  font-size: 12px;
+}
+.guide-submenu-content blockquote {
+  font-size: 14px;
+}
+.guide-submenu-content a {
+  font-size: 13px;
+  color: var(--green);
+  text-decoration: underline;
+}
+.guide-note-action {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+.guide-note-action .button {
+  min-height: 40px;
+  white-space: normal;
+  font-size: 11px;
+  padding: 9px 10px;
+  gap: 7px;
+}
+.guide-note-action small {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.guide-refresh.text-button {
+  min-height: 36px;
+  font-size: 10px;
+  padding: 6px 0;
+  color: var(--muted);
+}
+.guide-compose {
+  margin: 6px 0 12px;
+}
+.guide-compose label {
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.guide-compose textarea {
+  min-height: 78px;
+  font-size: 14px;
+  padding: 10px 12px;
+}
+.guide-compose-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+.guide-compose-footer small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.guide-compose-footer .button {
+  font-size: 11px;
+  min-height: 40px;
+  padding: 9px 10px;
+  gap: 7px;
+}
+.guide-status {
+  font-size: 12px !important;
+  margin: 12px 0;
+  color: var(--green);
+}
+.guide-error {
+  padding: 10px;
+  margin: 10px 0;
+}
+.reader-aside .guide-error p {
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.guide-error .button {
+  font-size: 11px;
+  margin: 0;
+  padding: 9px;
+  min-height: 40px;
+}
+.guide-about {
+  border: 0;
+  border-top: 1px solid var(--line);
+  padding: 0;
+  margin-top: 8px;
+}
+.guide-about > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  list-style: none;
+  font-size: 10px;
+  color: var(--muted);
+  min-height: 34px;
+  padding: 7px 0;
+  font-weight: 400;
+}
+.guide-about > summary::-webkit-details-marker {
+  display: none;
+}
+.reader-aside .guide-about p {
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 6px 0;
+}
+.guide-about > div {
+  max-height: 140px;
+  overflow: auto;
+}
+.guide-history {
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+}
+.guide-history > summary {
+  font-size: 11px;
+  min-height: 36px;
+}
+.guide-history > button {
+  display: block;
+  width: 100%;
+  padding: 10px 8px;
+  min-height: 40px;
+  text-align: left;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12px;
+  border-radius: 6px;
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+.guide-history > button[aria-pressed="true"] {
+  color: var(--green);
+  font-weight: 700;
+}
+.reader-aside .reader-accordion.panel {
+  padding: 0;
+  border: 1px solid var(--line);
+}
+.reader-accordion > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 14px 18px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.reader-accordion > summary::-webkit-details-marker {
+  display: none;
+}
+.reader-accordion > summary > span {
+  flex: 1;
+}
+.reader-accordion > summary > svg:first-child {
+  color: var(--muted);
+}
+.reader-accordion > summary > svg:last-child {
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.reader-accordion[open] > summary > svg:last-child {
+  transform: rotate(180deg);
+}
+.reader-accordion-body {
+  padding: 0 18px 14px;
+}
+.reader-aside .reader-accordion-body p {
+  font-size: 13px;
+  margin: 0 0 10px;
+  line-height: 1.8;
+}
+.reader-accordion-body h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.reader-exhibit-link {
+  display: block;
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 0;
+  background: transparent;
+  text-align: left;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.7;
+  border-bottom: 1px solid var(--line);
+}
+.reader-exhibit-link:last-child {
+  border-bottom: 0;
+}
+.reader-exhibit-link:hover {
+  color: var(--green);
+}
+@media (max-width: 767px) {
+  .preparation-guide.panel {
+    padding: 17px 20px;
+  }
+  .guide-menu-trigger {
+    font-size: 14px;
+    min-height: 46px;
+  }
+  .guide-submenu > summary {
+    font-size: 13px;
+    min-height: 44px;
+  }
+  .guide-note-action .button,
+  .guide-compose-footer .button {
+    min-height: 44px;
+    font-size: 12px;
+  }
+  .guide-menu-panel {
+    max-height: min(320px, 50dvh);
+  }
+  .guide-heading h3 {
+    font-size: 18px;
+  }
+}
+@media print {
+  .preparation-guide {
+    display: none !important;
+  }
+}
+@media (max-width: 900px) and (min-width: 768px) {
+  .reader-aside > .preparation-guide {
+    grid-column: 1/-1;
+  }
+}
+.reader-aside .guide-submenu-content p {
+  font-size: 16px;
+}
+@media (max-width: 767px) {
+  .guide-about > summary,
+  .guide-history > summary,
+  .guide-refresh.text-button {
+    min-height: 44px;
+  }
+}

@@ -31,3 +31,15 @@ Build mesuré : environ 469 ko de JavaScript initial (145 ko gzip), chunk 3D dif
 Vite émet un avertissement de taille sur le chunk 3D ; il reste différé. Deux annotations de commentaires Zod sont ignorées par Rollup, sans erreur de compilation. Aucun modèle, HDRI ou service distant obligatoire.
 
 Pas de validation sur un backend Django réel, de performance STT/IA/TTS, de synchronisation labiale par visèmes, de FPS garanti ou de qualité juridique certifiée. Safari/Firefox, microphones et téléphones physiques, audit complet WCAG/lecteur d’écran et GPU modestes restent à vérifier avec l’équipe. Les tests du contrat simulé ne remplacent pas la recette du service réel.
+
+## Guide de préparation — 12 novembre 2026
+
+Ajout du guide sur la page dossier : méthode, analyse des pièces, plan, question libre, sources fournies et ajout explicite aux notes. `npm run check` réussit avec **37 tests unitaires**, types, lint, contrat généré et build. Une recette complète de **28 tests navigateur** a réussi ; après les derniers ajustements, **8 tests ciblés du guide** ont également réussi (desktop, mobile et Django simulé), dont deux nouveaux cas de notes pleines. La suite complète comprend désormais 30 scénarios.
+
+Les tests vérifient notamment l’absence d’envoi en démo, l’isolation par dossier, l’ouverture des pièces depuis les conseils, la conservation des notes existantes, la limite de 10 000 caractères, la conservation d’un nouveau brouillon après réessai, le clientMessageId stable, l’exclusion des notes privées et le rejet d’une pièce inconnue. Les captures du guide sur desktop et mobile ont été examinées. Aucune IA réelle n’a été appelée ; le nouvel endpoint reste une proposition à connecter côté Django.
+
+## Guide compact — 12 novembre 2026
+
+Remplacement du panneau long par quatre menus repliés et des sous-menus exclusifs. Les cartes Objectif et Pièces sont également repliables. `npm run check` réussit : types, lint, **37 tests unitaires**, contrat et build. La dernière recette complète Playwright réussit avec **31 tests navigateur**, sur desktop, mobile et contrat Django simulé.
+
+Vérifications ajoutées : hauteur du guide fermé et ouvert, navigation clavier, sous-menus exclusifs, brouillon préservé entre rubriques et onglets, réouverture sans nouvelle requête, fermeture pendant une requête et ajout explicite aux notes. Les captures desktop/mobile ont été actualisées et examinées.

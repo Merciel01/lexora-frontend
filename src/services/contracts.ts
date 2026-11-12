@@ -199,3 +199,42 @@ export const eventSchema = z.discriminatedUnion("type", [
   }),
 ]);
 export type TrialEvent = z.infer<typeof eventSchema>;
+
+export const guideIntentSchema = z.enum([
+  "method",
+  "evidence",
+  "outline",
+  "question",
+]);
+export const guideMessageSchema = z.object({
+  role: z.enum(["student", "guide"]),
+  text: z.string().trim().min(1).max(6000),
+});
+export const guideRequestSchema = z.object({
+  clientMessageId: z.string().min(1).max(100),
+  roleId: z.string().min(1).max(100),
+  intent: guideIntentSchema,
+  message: z.string().trim().min(1).max(1500),
+  history: z.array(guideMessageSchema).max(12),
+});
+export const guideResponseSchema = z.object({
+  id: z.string().min(1).max(100),
+  caseId: z.string().min(1).max(100),
+  clientMessageId: z.string().min(1).max(100),
+  introduction: z.string().min(1).max(2000),
+  steps: z
+    .array(
+      z.object({
+        title: z.string().min(1).max(150),
+        detail: z.string().min(1).max(1500),
+        exhibitIds: z.array(z.string().max(100)).max(20),
+      }),
+    )
+    .min(1)
+    .max(8),
+  questions: z.array(z.string().min(1).max(300)).max(6),
+  citations: z.array(citationSchema).max(10),
+});
+export type GuideIntent = z.infer<typeof guideIntentSchema>;
+export type GuideRequest = z.infer<typeof guideRequestSchema>;
+export type GuideResponse = z.infer<typeof guideResponseSchema>;
