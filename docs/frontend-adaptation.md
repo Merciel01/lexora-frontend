@@ -2,6 +2,10 @@
 
 Cette branche réunit le guide compact et la salle Skillforce v27. Le parcours de démonstration fonctionne sans backend : choix du rôle et du dossier, guide, notes, équipement, audience, pièces, résultat et débriefing. Le guide de démonstration utilise des conseils prédéfinis ; aucune IA n’est appelée depuis le navigateur.
 
+![Audience adaptée sur ordinateur](images/courtroom-adapted-desktop.png)
+
+[Voir la version mobile](images/courtroom-adapted-mobile.png)
+
 ## Démarrer
 
 ```sh

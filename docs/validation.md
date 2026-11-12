@@ -62,3 +62,13 @@ Les tests vérifient notamment l’absence d’envoi en démo, l’isolation par
 Remplacement du panneau long par quatre menus repliés et des sous-menus exclusifs. Les cartes Objectif et Pièces sont également repliables. `npm run check` réussit : types, lint, **37 tests unitaires**, contrat et build. La dernière recette complète Playwright réussit avec **31 tests navigateur**, sur desktop, mobile et contrat Django simulé.
 
 Vérifications ajoutées : hauteur du guide fermé et ouvert, navigation clavier, sous-menus exclusifs, brouillon préservé entre rubriques et onglets, réouverture sans nouvelle requête, fermeture pendant une requête et ajout explicite aux notes. Les captures desktop/mobile ont été actualisées et examinées.
+
+## Frontend adapté à la salle — 12 novembre 2026
+
+Branche d’adaptation réunissant le guide compact et la salle v27, alignée sur `develop` après la fusion de la PR #2. `npm run check` réussit : types, lint, **47 tests unitaires**, génération du contrat et build. La recette complète finale Chrome réussit avec **39 tests navigateur** en environ 5,9 minutes, desktop 1440 × 960, mobile 390 × 844 et contrat Django simulé.
+
+Vérifications : trois points de vue, qualité persistante, sept intervenants pilotés par les événements, absence de scénario autonome concurrent, sous-titres entièrement sous la scène, repli après GLB absent, sortie immédiate du chargement sans perdre le brouillon, guide et notes, parcours complet et erreurs serveur simulées. Les cycles de passage à la barre terminent en environ 15 à 18 secondes dans cette recette. La boucle suspend désormais le rendu et la simulation automatique lorsque le test pilote manuellement les pas de temps ; le rendu réel reste vérifié par les autres tests.
+
+Les serveurs de cette recette finale sont isolés sur 5273 et 5274 dans une copie de vérification, avec un cache de dépendances distinct. Le code applicatif testé est celui de la branche ; seuls les ports et les chemins autorisés des dépendances sont adaptés dans la copie. Captures examinées : `docs/images/courtroom-adapted-desktop.png` et `docs/images/courtroom-adapted-mobile.png`.
+
+Le build livre environ 486 ko de JavaScript principal (150 ko gzip), un adaptateur 3D différé de 2,4 ko (1,15 ko gzip), le moteur isolé existant et les mêmes 38 Mo de modèles. Pas de réduction annoncée du poids des GLB, de mesure de fluidité sur GPU réel ou de recette sur téléphone physique. Le chargement est plus tolérant aux réseaux lents, sans prétendre à une validation sur réseau mobile réel. Django, IA, STT et TTS réels restent à connecter et à valider côté backend.
