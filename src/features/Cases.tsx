@@ -15,6 +15,7 @@ import { getDemoRoles, getDemoCases, getDemoCase } from "../services/demo";
 import { Heading, Action, Badge } from "../components/Layout";
 import { ExhibitViewer } from "../components/ExhibitViewer";
 import { Modal } from "../components/Modal";
+import { PreparationGuide } from "./guide/PreparationGuide";
 export function RolePicker() {
   const [selected, setSelected] = useState(read("role", "defense"));
   const query = useQuery({
@@ -256,6 +257,7 @@ export function Reader() {
   const [tab, setTab] = useState("Faits");
   const [note, setNote] = useState(() => read("notes:" + caseId, ""));
   const [clear, setClear] = useState(false);
+  const roleId = read("role", "defense");
   useEffect(() => {
     setNote(read("notes:" + caseId, ""));
     setTab("Faits");
@@ -354,7 +356,7 @@ export function Reader() {
               <h2>Pièces du dossier</h2>
               {c.exhibits.length ? (
                 c.exhibits.map((e) => (
-                  <details key={e.id}>
+                  <details key={e.id} id={"exhibit-" + e.id}>
                     <summary>
                       {e.id} · {e.title}
                     </summary>
@@ -396,6 +398,33 @@ export function Reader() {
           )}
         </section>
         <aside className="reader-aside">
+          <PreparationGuide
+            key={c.id + ":" + roleId}
+            caseDetail={c}
+            roleId={roleId}
+            noteLength={note.length}
+            onAddNotes={(text) => {
+              const next = note ? note + "\n\n" + text : text;
+              if (next.length > 10000) return;
+              setNote(next);
+              write("notes:" + caseId, next);
+              setTab("Mes notes");
+              requestAnimationFrame(() =>
+                document.getElementById("tab-2")?.focus(),
+              );
+            }}
+            onShowExhibits={(ids) => {
+              setTab("Pièces");
+              requestAnimationFrame(() => {
+                document.getElementById("tab-1")?.focus();
+                for (const id of ids) {
+                  const element = document.getElementById("exhibit-" + id);
+                  if (element instanceof HTMLDetailsElement)
+                    element.open = true;
+                }
+              });
+            }}
+          />
           <section className="panel">
             <Badge>VOTRE OBJECTIF</Badge>
             <h3>Une argumentation convaincante</h3>

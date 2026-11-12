@@ -29,6 +29,7 @@ Le backend est séparé dans [XavierMombimbo/lexora-backend](https://github.com/
 React/Vite ci-dessous ; le mode serveur n'est pas encore connecté à ce service.
 
 - [Contrat REST, authentification, WebSocket et audio](docs/backend-contract.md).
+- [Guide IA de préparation : fonctionnement et endpoint proposé](docs/preparation-guide.md).
 - [OpenAPI proposé](docs/openapi-proposed.json), généré depuis les schémas frontend.
 - [Architecture et limites](docs/implementation-status.md).
 - [Vérifications exécutées](docs/validation.md).

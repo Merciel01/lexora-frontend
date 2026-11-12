@@ -2127,3 +2127,262 @@ summary {
   align-items: center;
   justify-content: center;
 }
+.preparation-guide.panel {
+  border: 1px solid #c8a66a70;
+  padding: 24px;
+  min-width: 0;
+  box-shadow: 0 4px 20px #101f3004;
+}
+.guide-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.guide-heading > div {
+  flex: 1;
+  min-width: 0;
+}
+.guide-heading .eyebrow {
+  font-size: 8px;
+  letter-spacing: 0.9px;
+  color: var(--wood);
+}
+.guide-heading h3 {
+  font-size: 19px;
+  margin: 4px 0 0;
+}
+.guide-symbol {
+  background: var(--navy);
+  color: var(--gold);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.guide-heading .icon-button {
+  margin-right: -8px;
+}
+.guide-launch {
+  width: 100%;
+  margin-top: 4px;
+  justify-content: space-between;
+}
+.reader-aside .preparation-guide > p {
+  font-size: 14px;
+  line-height: 1.75;
+}
+.guide-context {
+  font-size: 12px !important;
+  line-height: 1.8;
+  margin: 12px 0 18px;
+}
+.guide-prompts {
+  display: grid;
+  gap: 8px;
+}
+.guide-prompts .button {
+  justify-content: space-between;
+  text-align: left;
+  padding: 12px 14px;
+  font-size: 12px;
+}
+.guide-conversation {
+  max-height: 520px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  margin-top: 20px;
+  padding: 2px 10px 2px 0;
+  overflow-wrap: anywhere;
+}
+.guide-exchange + .guide-exchange {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  margin-top: 22px;
+}
+.guide-question {
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 12px !important;
+  color: var(--ink);
+  font-weight: 700;
+}
+.guide-question > svg {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+.reader-aside .guide-answer p {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+.guide-answer ol {
+  list-style: none;
+  counter-reset: guide;
+  display: grid;
+  gap: 18px;
+  margin: 18px 0;
+  padding: 0;
+}
+.guide-answer ol > li {
+  border-left: 2px solid var(--gold);
+  padding-left: 13px;
+}
+.guide-answer ol > li > strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.guide-answer ol > li p {
+  margin: 7px 0 0;
+}
+.guide-answer .text-button {
+  color: var(--green);
+  justify-content: flex-start;
+  padding-left: 0;
+  text-align: left;
+  font-weight: 600;
+}
+.guide-reflection {
+  padding: 15px;
+  background: #eaf3ef;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.guide-reflection ul {
+  padding-left: 18px;
+  margin: 8px 0 0;
+}
+.guide-reflection li + li {
+  margin-top: 8px;
+}
+.guide-citations {
+  margin-top: 20px;
+  font-size: 13px;
+}
+.guide-citations blockquote {
+  font-size: 14px;
+}
+.guide-status {
+  font-size: 11px !important;
+  min-height: 20px;
+  margin: 17px 0 12px;
+}
+.guide-compose label {
+  font-size: 12px;
+  margin-bottom: 9px;
+}
+.guide-compose textarea {
+  background: #fafaf7;
+  font-size: 14px;
+  min-height: 105px;
+}
+.guide-compose-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+.guide-compose-footer small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.guide-compose-footer .button {
+  font-size: 11px;
+  padding: 12px;
+  gap: 7px;
+  flex-shrink: 0;
+}
+.guide-note-action {
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  margin-top: 20px;
+  display: grid;
+  gap: 10px;
+}
+.guide-note-action .button {
+  white-space: normal;
+  font-size: 12px;
+  padding: 12px 10px;
+}
+.guide-note-action small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.guide-footnote {
+  font-size: 11px !important;
+  line-height: 1.8;
+  margin: 20px 0 0;
+}
+.guide-error {
+  padding: 12px;
+}
+.reader-aside .guide-error p {
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.guide-error .button {
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+.guide-answer ul,
+.guide-answer ol {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 900px) and (min-width: 768px) {
+  .reader-aside > .preparation-guide {
+    grid-column: 1/-1;
+  }
+  .guide-conversation {
+    max-height: 460px;
+  }
+  .guide-prompts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .guide-prompts .button {
+    align-items: start;
+  }
+}
+@media (max-width: 767px) {
+  .preparation-guide.panel {
+    padding: 23px;
+  }
+  .guide-heading .eyebrow {
+    font-size: 8px;
+  }
+  .guide-conversation {
+    max-height: 480px;
+  }
+  .guide-compose-footer .button {
+    font-size: 12px;
+  }
+  .guide-compose-footer small {
+    font-size: 11px;
+  }
+  .guide-answer ol > li > strong {
+    font-size: 16px;
+  }
+  .guide-heading h3 {
+    font-size: 20px;
+  }
+}
+@media print {
+  .preparation-guide {
+    display: none !important;
+  }
+}
+.guide-conversation {
+  position: relative;
+}
+.guide-launch {
+  margin-top: 14px;
+}

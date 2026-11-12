@@ -211,3 +211,101 @@ test("panne REST ne montre jamais de faux dossiers", async ({ page }) => {
     page.getByRole("heading", { name: "La parcelle de Limete" }),
   ).toHaveCount(0);
 });
+test("guide Django : notes privées exclues et réessai idempotent", async ({
+  page,
+}) => {
+  await mock(page);
+  const ids: string[] = [];
+  await page.route("**/api/cases/limete/guide", async (route) => {
+    const payload = route.request().postDataJSON();
+    expect(route.request().headers()["x-csrftoken"]).toBe("test-csrf");
+    expect(JSON.stringify(payload)).not.toContain(
+      "Note personnelle confidentielle",
+    );
+    expect(payload.notes).toBeUndefined();
+    expect(payload.roleId).toBe("defense");
+    ids.push(payload.clientMessageId);
+    if (ids.length === 1) {
+      await route.fulfill({ status: 503, json: { detail: "offline" } });
+      return;
+    }
+    await route.fulfill({
+      json: {
+        id: "guide-1",
+        caseId: "limete",
+        clientMessageId: payload.clientMessageId,
+        introduction: "Conseils reçus du serveur de test.",
+        steps: [
+          {
+            title: "Examiner le dossier reçu",
+            detail:
+              "Reliez chaque affirmation à une pièce et indiquez ses limites.",
+            exhibitIds: ["P01"],
+          },
+        ],
+        questions: ["Que souhaitez-vous établir ?"],
+        citations: [],
+      },
+    });
+  });
+  await page.goto("/app/cases/limete");
+  await page.getByRole("tab", { name: "Mes notes" }).click();
+  await page
+    .getByLabel("Plan et arguments")
+    .fill("Note personnelle confidentielle");
+  await page.getByRole("button", { name: "Préparer avec le guide" }).click();
+  await page
+    .getByLabel("Votre question de préparation")
+    .fill("Comment classer les faits ?");
+  await page.getByRole("button", { name: "Demander au guide" }).click();
+  await expect(page.getByRole("alert")).toContainText("indisponible");
+  await expect(page.getByLabel("Votre question de préparation")).toHaveValue(
+    "Comment classer les faits ?",
+  );
+  await page
+    .getByLabel("Votre question de préparation")
+    .fill("Une autre question à conserver");
+  await page.getByRole("button", { name: "Réessayer la question" }).click();
+  await expect(
+    page.getByText("Conseils reçus du serveur de test.", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Votre question de préparation")).toHaveValue(
+    "Une autre question à conserver",
+  );
+  expect(ids[0]).toBe(ids[1]);
+  await expect(page.getByText("Démo — conseils simulés")).toHaveCount(0);
+});
+test("guide refuse une réponse portant sur une pièce inconnue", async ({
+  page,
+}) => {
+  await mock(page);
+  await page.route("**/api/cases/limete/guide", async (route) => {
+    const input = route.request().postDataJSON();
+    await route.fulfill({
+      json: {
+        id: "guide-bad",
+        caseId: "limete",
+        clientMessageId: input.clientMessageId,
+        introduction: "Cette réponse ne doit pas être affichée.",
+        steps: [
+          {
+            title: "Pièce absente",
+            detail: "Contenu refusé.",
+            exhibitIds: ["P99"],
+          },
+        ],
+        questions: [],
+        citations: [],
+      },
+    });
+  });
+  await page.goto("/app/cases/limete");
+  await page.getByRole("button", { name: "Préparer avec le guide" }).click();
+  await page
+    .getByRole("button", { name: "Examiner les pièces", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText("pièce absente");
+  await expect(
+    page.getByText("Cette réponse ne doit pas être affichée."),
+  ).toHaveCount(0);
+});
