@@ -22,6 +22,12 @@ Parcours : rôle → dossier → faits, pièces et notes → équipement → aud
 
 ## Ce que l’équipe backend doit lire
 
+Le développement frontend suit [CONTRIBUTING.md](CONTRIBUTING.md), avec `develop`
+comme branche d'intégration et `npm run check` pour les vérifications locales.
+Le backend est séparé dans [XavierMombimbo/lexora-backend](https://github.com/XavierMombimbo/lexora-backend)
+(privé). Sa base Django issue de SkillForge doit encore être adaptée au contrat
+React/Vite ci-dessous ; le mode serveur n'est pas encore connecté à ce service.
+
 - [Contrat REST, authentification, WebSocket et audio](docs/backend-contract.md).
 - [OpenAPI proposé](docs/openapi-proposed.json), généré depuis les schémas frontend.
 - [Architecture et limites](docs/implementation-status.md).

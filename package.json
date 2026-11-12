@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run contract && npm run build",
     "test": "vitest run src",
     "test:e2e": "playwright test",
     "contract": "node scripts/export-contract.mjs",
