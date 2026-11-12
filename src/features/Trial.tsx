@@ -165,8 +165,9 @@ export function Setup() {
             accessible pendant tout le procès.
           </p>
           <p>
-            Qualité 3D : {getPreferences().quality} · réglable dans vos
-            préférences
+            La salle 3D se charge à la demande (environ 38 Mo au premier accès).
+            Pour une connexion lente, commencez en mode texte ; vous pourrez
+            ouvrir la salle ensuite.
           </p>
         </section>
       </div>
@@ -232,7 +233,8 @@ export function Trial() {
   const [sound, setSound] = useState(prefs.sound && prefs.localVoice);
   const [subtitles, setSubtitles] = useState(prefs.subtitles);
   const [textMode, setTextMode] = useState(read("mode", "text") === "text");
-  const [camera, setCamera] = useState<"wide" | "speaker">("wide");
+  const [camera, setCamera] = useState<"wide" | "speaker" | "student">("wide");
+  const [sceneQuality, setSceneQuality] = useState(prefs.quality);
   const [pieceOpen, setPieceOpen] = useState(false);
   const [piece, setPiece] = useState("P01");
   const [quit, setQuit] = useState(false);
@@ -459,7 +461,13 @@ export function Trial() {
               : "TRANSPORT DÉMO LOCAL"
             : "CONNEXION INTERROMPUE"}
         </Badge>
-        <button className="text-button" onClick={() => setTextMode((v) => !v)}>
+        <button
+          className="text-button"
+          onClick={() => {
+            if (textMode) setSceneError(false);
+            setTextMode((v) => !v);
+          }}
+        >
           {textMode ? <Scale size={16} /> : <MessageSquare size={16} />}{" "}
           {textMode ? "Voir la salle 3D" : "Passer en mode texte"}
         </button>
@@ -500,26 +508,60 @@ export function Trial() {
       )}
       {!textMode && (
         <>
-          <div className="scene-controls">
-            <a className="text-button" href={`${import.meta.env.BASE_URL}courtroom/index.html`} target="_blank" rel="noopener noreferrer">Explorer la salle 3D</a>
-            <button
-              className="text-button"
-              onClick={() =>
-                setCamera((c) => (c === "wide" ? "speaker" : "wide"))
-              }
-            >
-              Caméra : {camera === "wide" ? "vue générale" : "intervenant"}
-            </button>
-            <button
-              className="text-button"
-              aria-pressed={subtitles}
-              onClick={() => {
-                setSubtitles((v) => !v);
-                savePreferences({ ...getPreferences(), subtitles: !subtitles });
-              }}
-            >
-              Sous-titres {subtitles ? "activés" : "désactivés"}
-            </button>
+          <div className="scene-controls courtroom-toolbar">
+            <label>
+              Point de vue
+              <select
+                value={camera}
+                onChange={(e) => setCamera(e.target.value as typeof camera)}
+              >
+                <option value="wide">Vue générale</option>
+                <option value="speaker">Intervenant</option>
+                <option value="student">Ma place</option>
+              </select>
+            </label>
+            <details className="courtroom-options">
+              <summary>Options de la salle</summary>
+              <div>
+                <label>
+                  Qualité de la salle
+                  <select
+                    value={sceneQuality}
+                    onChange={(e) => {
+                      const quality = e.target.value as typeof sceneQuality;
+                      setSceneQuality(quality);
+                      savePreferences({ ...getPreferences(), quality });
+                    }}
+                  >
+                    <option value="auto">Automatique</option>
+                    <option value="low">Économique</option>
+                    <option value="high">Détaillée</option>
+                  </select>
+                </label>
+                <button
+                  className="text-button"
+                  aria-pressed={subtitles}
+                  onClick={() => {
+                    setSubtitles((v) => !v);
+                    savePreferences({
+                      ...getPreferences(),
+                      subtitles: !subtitles,
+                    });
+                  }}
+                >
+                  Sous-titres {subtitles ? "activés" : "désactivés"}
+                </button>
+                <a
+                  className="text-button"
+                  href={`${import.meta.env.BASE_URL}courtroom/index.html`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Explorer la salle 3D{" "}
+                  <span className="sr-only">(nouvel onglet)</span>
+                </a>
+              </div>
+            </details>
           </div>
           <div className="court-scene">
             <div className="scene-label">
@@ -550,23 +592,27 @@ export function Trial() {
                     speaking={playing || turnSpeaking}
                     objection={s.objection}
                     reduced={reduced}
-                    quality={prefs.quality}
+                    quality={sceneQuality}
                     cameraMode={camera}
                     gesture={gesture}
                     emotion={emotion}
                     onUnavailable={() => setSceneError(true)}
+                    onUseText={() => setTextMode(true)}
                   />
                 </Suspense>
               </SceneBoundary>
             )}
             {s.objection && <strong className="objection">OBJECTION</strong>}
-            {subtitles && (
-              <div className="scene-caption">
-                <span>{s.entries.at(-1)?.speaker}</span>
-                <p>{s.entries.at(-1)?.text}</p>
-              </div>
-            )}
           </div>
+          {subtitles && !sceneError && (
+            <div
+              className="scene-caption"
+              aria-label="Sous-titres de l’audience"
+            >
+              <span>{s.entries.at(-1)?.speaker}</span>
+              <p>{s.entries.at(-1)?.text}</p>
+            </div>
+          )}
         </>
       )}
       <div className="trial-grid">

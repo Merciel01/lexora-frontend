@@ -870,8 +870,22 @@ details p {
   overflow: hidden;
   margin-bottom: 24px;
 }
-.courtroom-frame { width: 100%; height: 100%; border: 0; display: block; }
-.courtroom-loading { position: absolute; inset: 0; display: grid; place-items: center; padding: 32px; background: var(--navy); color: white; text-align: center; }
+.courtroom-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+.courtroom-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: var(--navy);
+  color: white;
+  text-align: center;
+}
 .scene-label {
   position: absolute;
   top: 16px;
@@ -885,7 +899,7 @@ details p {
 .scene-label > span:last-child {
   color: #d2dce4;
   font-size: 11px;
-  background: rgba(16, 31, 48, .9);
+  background: rgba(16, 31, 48, 0.9);
   padding: 5px 9px;
   border-radius: 6px;
 }
@@ -2507,5 +2521,113 @@ summary {
   .guide-history > summary,
   .guide-refresh.text-button {
     min-height: 44px;
+  }
+}
+
+/* Audience: keep the room visible and group secondary controls. */
+.courtroom-toolbar {
+  align-items: start;
+  gap: 12px;
+}
+.courtroom-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.courtroom-toolbar select {
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 30px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+}
+.courtroom-options {
+  padding: 0;
+  min-width: 180px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+}
+.courtroom-options > summary {
+  padding: 12px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.courtroom-options > div {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+.courtroom-options .text-button {
+  min-height: 44px;
+  justify-content: start;
+}
+.court-scene {
+  margin-bottom: 12px;
+}
+.scene-caption {
+  position: relative;
+  inset: auto;
+  max-height: none;
+  overflow: visible;
+  margin: 0 0 24px;
+  border: 1px solid var(--line);
+  padding: 14px 18px;
+}
+.scene-caption p {
+  font-weight: 500;
+}
+.courtroom-loading {
+  z-index: 3;
+}
+.courtroom-loading > div {
+  width: min(100%, 370px);
+}
+.courtroom-loading strong {
+  font-size: 20px;
+}
+.courtroom-loading p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #d2dce4;
+}
+.courtroom-loading progress {
+  display: block;
+  width: 100%;
+  height: 6px;
+  margin: 16px 0;
+  accent-color: var(--gold);
+}
+@media (max-width: 767px) {
+  .courtroom-toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .courtroom-toolbar > label {
+    justify-content: space-between;
+  }
+  .courtroom-toolbar select {
+    min-width: 160px;
+  }
+  .courtroom-options {
+    width: 100%;
+  }
+  .courtroom-options > div > label {
+    justify-content: space-between;
+  }
+  .court-scene {
+    height: clamp(340px, 55svh, 460px);
+  }
+  .scene-caption {
+    inset: auto;
+    padding: 12px 14px;
+    max-height: none;
   }
 }
