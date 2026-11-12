@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { cases } from "./model";
+import { preferencesSchema, type Preferences } from "./preferences";
 import {
   profileSchema,
+  noteSchema,
   roleSchema,
   caseSchema,
   listSchema,
@@ -45,6 +47,13 @@ export async function request<T>(
     if (response.status === 202)
       throw new ApiError(202, "Le jugement est encore en préparation.");
     if (!response.ok) {
+      if (response.status === 400 || response.status === 422) {
+        const error = z.object({ detail: z.string().optional(), errors: z.union([z.array(z.string()), z.record(z.string(), z.array(z.string()))]).optional() }).safeParse(await response.json().catch(() => null));
+        if (error.success) {
+          const messages = Array.isArray(error.data.errors) ? error.data.errors : Object.values(error.data.errors || {}).flat();
+          throw new ApiError(response.status, [error.data.detail, ...messages.slice(0, 3)].filter(Boolean).join(" ").slice(0, 1000) || "Vérifiez les informations saisies.");
+        }
+      }
       if (response.status === 401)
         window.dispatchEvent(new Event("lexora-session-expired"));
       throw new ApiError(
@@ -101,6 +110,10 @@ export const api: ApiClient = {
 };
 export const serverApi = {
   ...api,
+  getPreferences: () => request("/preferences", preferencesSchema),
+  savePreferences: (value: Preferences) => request("/preferences", preferencesSchema, { method: "PUT", body: json(value) }),
+  getNotes: (caseId: string) => request(`/cases/${encodeURIComponent(caseId)}/notes`, noteSchema),
+  saveNotes: (caseId: string, text: string) => request(`/cases/${encodeURIComponent(caseId)}/notes`, noteSchema, { method: "PUT", body: json({ text }) }),
   async csrf() {
     csrf = (await request("/auth/csrf", z.object({ csrfToken: z.string() })))
       .csrfToken;

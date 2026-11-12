@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Lexora frontend — contrat proposé",
+    "title": "LEXORA — contrat partagé frontend / Django",
     "version": "1.0.0",
-    "description": "Proposition de l’équipe frontend, à valider et remplacer par l’OpenAPI Django réel."
+    "description": "Contrat v1 testé contre Django local ; voix et services externes soumis à leur configuration. Schémas générés depuis le frontend."
   },
   "servers": [
     {
@@ -16,6 +16,129 @@
     }
   ],
   "paths": {
+    "/preferences": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Réponse selon le contrat proposé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/preferencesSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expirée"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "responses": {
+          "200": {
+            "description": "Réponse selon le contrat proposé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/preferencesSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expirée"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/preferencesSchema"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cases/{id}/notes": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Réponse selon le contrat proposé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/noteSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expirée"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "responses": {
+          "200": {
+            "description": "Réponse selon le contrat proposé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/noteSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expirée"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "maxLength": 10000
+                  }
+                },
+                "required": [
+                  "text"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/csrf": {
       "get": {
         "security": [],
@@ -275,7 +398,7 @@
       },
       "post": {
         "responses": {
-          "200": {
+          "201": {
             "description": "Réponse selon le contrat proposé",
             "content": {
               "application/json": {
@@ -286,10 +409,13 @@
             }
           },
           "401": {
-            "description": "Session expirée"
+            "description": "Authentification requise"
           },
           "403": {
-            "description": "Accès refusé"
+            "description": "Rôle verrouillé"
+          },
+          "404": {
+            "description": "Dossier absent"
           }
         },
         "requestBody": {
@@ -510,6 +636,9 @@
         "responses": {
           "200": {
             "description": "detail optionnel ; récupération non énumérante"
+          },
+          "201": {
+            "description": "Compte créé"
           },
           "204": {
             "description": "Action acceptée"
@@ -949,6 +1078,10 @@
                       "type": "string"
                     }
                   },
+                  "ttsAvailable": {
+                    "default": false,
+                    "type": "boolean"
+                  },
                   "startedAt": {
                     "type": "string"
                   },
@@ -974,6 +1107,7 @@
                   "activeSpeaker",
                   "seq",
                   "audioCodecs",
+                  "ttsAvailable",
                   "startedAt"
                 ],
                 "additionalProperties": false
@@ -1374,6 +1508,65 @@
         ],
         "additionalProperties": false
       },
+      "noteSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 10000
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "preferencesSchema": {
+        "type": "object",
+        "properties": {
+          "reduced": {
+            "type": "boolean"
+          },
+          "sound": {
+            "type": "boolean"
+          },
+          "subtitles": {
+            "type": "boolean"
+          },
+          "quality": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "low",
+              "high"
+            ]
+          },
+          "localVoice": {
+            "type": "boolean"
+          },
+          "voiceUri": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "captureMode": {
+            "type": "string",
+            "enum": [
+              "hold",
+              "toggle"
+            ]
+          }
+        },
+        "required": [
+          "reduced",
+          "sound",
+          "subtitles",
+          "quality",
+          "localVoice",
+          "voiceUri",
+          "captureMode"
+        ],
+        "additionalProperties": false
+      },
       "profileSchema": {
         "type": "object",
         "properties": {
@@ -1553,6 +1746,10 @@
               "type": "string"
             }
           },
+          "ttsAvailable": {
+            "default": false,
+            "type": "boolean"
+          },
           "startedAt": {
             "type": "string"
           },
@@ -1578,6 +1775,7 @@
           "activeSpeaker",
           "seq",
           "audioCodecs",
+          "ttsAvailable",
           "startedAt"
         ],
         "additionalProperties": false

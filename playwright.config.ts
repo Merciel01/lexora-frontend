@@ -1,10 +1,12 @@
 import { defineConfig } from "@playwright/test";
+const demoPort = Number(process.env.LEXORA_E2E_PORT || 5173);
+const serverPort = demoPort + 1;
 export default defineConfig({
   testDir: "./e2e",
   workers: 1,
   timeout: 40000,
   use: {
-    baseURL: "http://127.0.0.1:5173",
+    baseURL: `http://127.0.0.1:${demoPort}`,
     launchOptions: {
       args: [
         "--disable-dev-shm-usage",
@@ -17,15 +19,16 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "npm run dev -- --host 127.0.0.1 --port 5173 --strictPort",
-      url: "http://127.0.0.1:5173",
+      command: `npm run dev -- --host 127.0.0.1 --port ${demoPort} --strictPort`,
+      url: `http://127.0.0.1:${demoPort}`,
+      env: { VITE_APP_MODE: "demo" },
       reuseExistingServer: !process.env.CI,
     },
     {
       command:
-        "npm run dev -- --host 127.0.0.1 --port 5174 --strictPort",
+        `npm run dev -- --host 127.0.0.1 --port ${serverPort} --strictPort`,
       env: { VITE_APP_MODE: "server" },
-      url: "http://127.0.0.1:5174",
+      url: `http://127.0.0.1:${serverPort}`,
       reuseExistingServer: !process.env.CI,
     },
   ],
@@ -44,7 +47,7 @@ export default defineConfig({
       name: "django-contract",
       testMatch: "**/server.spec.ts",
       use: {
-        baseURL: "http://127.0.0.1:5174",
+        baseURL: `http://127.0.0.1:${serverPort}`,
         viewport: { width: 1440, height: 960 },
       },
     },

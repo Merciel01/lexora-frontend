@@ -51,7 +51,7 @@ const snapshot = {
   startedAt: "2026-11-09T10:00:00Z",
   seq: 0,
   audioCodecs: [],
-  websocketUrl: "ws://127.0.0.1:5174/ws/trial-1",
+  websocketUrl: "/ws/trial-1",
 };
 async function mock(page: Page) {
   let signedIn = true;

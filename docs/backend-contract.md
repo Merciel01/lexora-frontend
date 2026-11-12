@@ -1,6 +1,6 @@
 # Contrat frontend / Django — proposition v1
 
-**Statut : implémenté et testé contre des réponses simulées, non validé sur un backend Django réel.** L’OpenAPI de Django devra primer sur cette proposition. Les hypothèses sont concentrées dans `src/services/api.ts`, `contracts.ts` et `realtime.ts`.
+**Statut : contrat v1 implémenté et testé avec le backend Django LEXORA local, en plus des tests simulés.** Voir [la recette réelle et ses limites](django-integration.md). Les schémas partagés sont concentrés dans `src/services/api.ts`, `contracts.ts` et `realtime.ts` ; `ttsAvailable`, les préférences et les notes font partie du raccordement.
 
 ## Démarrage pour l’équipe backend
 

@@ -254,10 +254,13 @@ const tabs = ["Faits", "Pièces", "Mes notes"];
 export function Reader() {
   const { caseId = "" } = useParams();
   const [tab, setTab] = useState("Faits");
-  const [note, setNote] = useState(() => read("notes:" + caseId, ""));
+  const [note, setNote] = useState(() => serverMode ? "" : read("notes:" + caseId, ""));
   const [clear, setClear] = useState(false);
+  const [notesStatus, setNotesStatus] = useState("");
+  const remoteNotes = useQuery({ queryKey: ["notes", caseId], queryFn: () => serverApi.getNotes(caseId), enabled: serverMode, retry: false });
+  useEffect(() => { if (remoteNotes.data) setNote(remoteNotes.data.text); }, [remoteNotes.data]);
   useEffect(() => {
-    setNote(read("notes:" + caseId, ""));
+    setNote(serverMode ? "" : read("notes:" + caseId, ""));
     setTab("Faits");
   }, [caseId]);
   const query = useQuery({
@@ -369,22 +372,32 @@ export function Reader() {
             <>
               <h2>Mes notes de préparation</h2>
               <label htmlFor="notes">
-                Plan et arguments — enregistrés sur cet appareil
+                {serverMode ? "Plan et arguments — notes privées de votre compte" : "Plan et arguments — enregistrés sur cet appareil"}
               </label>
               <textarea
                 id="notes"
                 maxLength={10000}
                 rows={10}
                 value={note}
+                disabled={serverMode && !remoteNotes.data}
                 onChange={(e) => {
                   setNote(e.target.value);
-                  write("notes:" + caseId, e.target.value);
+                  if (!serverMode) write("notes:" + caseId, e.target.value);
+                  setNotesStatus("");
                 }}
                 placeholder={
                   "1. Faits pertinents\n2. Pièces utiles\n3. Demandes à soutenir"
                 }
               />
               <small>{note.length} / 10 000 caractères</small>
+              {serverMode && <>
+                <button className="button" disabled={!remoteNotes.data} onClick={async () => {
+                  try { await serverApi.saveNotes(caseId, note); setNotesStatus("Notes enregistrées dans votre compte."); }
+                  catch { setNotesStatus("Enregistrement impossible. Votre texte est conservé ; réessayez."); }
+                }}>Enregistrer mes notes</button>
+                <p role="status">{notesStatus}</p>
+                {remoteNotes.isError && <p role="alert">Notes indisponibles. <button onClick={() => void remoteNotes.refetch()}>Réessayer</button></p>}
+              </>}
               <button
                 className="button secondary"
                 disabled={!note}
@@ -438,8 +451,7 @@ export function Reader() {
       {clear && (
         <Modal title="Effacer ces notes ?" onClose={() => setClear(false)}>
           <p>
-            Cette suppression concerne uniquement les notes de ce dossier, sur
-            cet appareil.
+            {serverMode ? "Cette suppression concerne les notes de ce dossier dans votre compte." : "Cette suppression concerne uniquement les notes de ce dossier, sur cet appareil."}
           </p>
           <div className="inline-actions">
             <button
@@ -450,10 +462,13 @@ export function Reader() {
             </button>
             <button
               className="button"
-              onClick={() => {
-                setNote("");
-                write("notes:" + caseId, "");
-                setClear(false);
+              onClick={async () => {
+                try {
+                  if (serverMode) await serverApi.saveNotes(caseId, "");
+                  else write("notes:" + caseId, "");
+                  setNote("");
+                  setClear(false);
+                } catch { setNotesStatus("Suppression impossible. Réessayez."); setClear(false); }
               }}
             >
               Confirmer la suppression

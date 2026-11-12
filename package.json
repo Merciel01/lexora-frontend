@@ -11,6 +11,7 @@
     "check": "npm run typecheck && npm run lint && npm run test && npm run contract && npm run build",
     "test": "vitest run src",
     "test:e2e": "playwright test",
+    "test:django": "playwright test --config playwright.django.config.ts",
     "contract": "node scripts/export-contract.mjs",
     "preview": "vite preview --host 0.0.0.0"
   },

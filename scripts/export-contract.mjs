@@ -53,6 +53,8 @@ const body = (properties) => ({
   },
 });
 const paths = {
+  "/preferences": { get: operation("preferencesSchema"), put: operation("preferencesSchema", { requestBody: { required: true, content: { "application/json": { schema: ref("preferencesSchema") } } } }) },
+  "/cases/{id}/notes": { parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], get: operation("noteSchema"), put: operation("noteSchema", { requestBody: body({ text: { type: "string", maxLength: 10000 } }) }) },
   "/auth/csrf": {
     get: {
       security: [],
@@ -152,6 +154,7 @@ const paths = {
       },
     },
     post: operation("snapshotSchema", {
+      responses: { 201: response("snapshotSchema"), 401: { description: "Authentification requise" }, 403: { description: "Rôle verrouillé" }, 404: { description: "Dossier absent" } },
       requestBody: body({
         roleId: { type: "string" },
         caseId: { type: "string" },
@@ -215,6 +218,7 @@ for (const name of [
         : {}),
       responses: {
         200: { description: "detail optionnel ; récupération non énumérante" },
+        ...(name === "register" ? { 201: { description: "Compte créé" } } : {}),
         204: { description: "Action acceptée" },
         400: { description: "Données invalides" },
         401: { description: "Identifiants non valides" },
@@ -228,10 +232,10 @@ await writeFile(
     {
       openapi: "3.1.0",
       info: {
-        title: "Lexora frontend — contrat proposé",
+        title: "LEXORA — contrat partagé frontend / Django",
         version: "1.0.0",
         description:
-          "Proposition de l’équipe frontend, à valider et remplacer par l’OpenAPI Django réel.",
+          "Contrat v1 testé contre Django local ; voix et services externes soumis à leur configuration. Schémas générés depuis le frontend.",
       },
       servers: [{ url: "/api" }],
       security: [{ session: [] }],

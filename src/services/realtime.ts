@@ -229,7 +229,7 @@ export class ServerTrialTransport {
             "Accusé de réception non reçu. Vous pouvez réessayer avec le même identifiant.",
           ),
         );
-      }, 12000);
+      }, 60000); // STT plus generation may take up to 50s; the ack follows durable commit.
       this.pending.set(id, { resolve, reject, timer });
       try {
         this.socket!.send(JSON.stringify(payload));

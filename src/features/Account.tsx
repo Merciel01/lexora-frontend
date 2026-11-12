@@ -23,6 +23,8 @@ export function Preferences() {
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const remotePreferences = useQuery({ queryKey: ["preferences"], queryFn: () => serverApi.getPreferences(), enabled: serverMode });
+  useEffect(() => { if (remotePreferences.data) setPrefs(remotePreferences.data); }, [remotePreferences.data]);
   const navigate = useNavigate();
   useEffect(() => {
     if (me.data) setName(me.data.name);
@@ -59,6 +61,7 @@ export function Preferences() {
           try {
             if (serverMode) {
               await serverApi.saveProfile(name.trim());
+              await serverApi.savePreferences(prefs);
               await queryClient.invalidateQueries({ queryKey: ["me"] });
             } else write("name", name.trim());
             savePreferences(prefs);
@@ -163,8 +166,7 @@ export function Preferences() {
           <option value="high">Élevée</option>
         </select>
         <p>
-          Les préférences sont enregistrées sur cet appareil. Le profil serveur
-          est modifié uniquement en mode Django.
+          {serverMode ? "Profil et préférences sont enregistrés dans votre compte LEXORA." : "Les préférences sont enregistrées sur cet appareil."}
         </p>
         <button className="button" disabled={busy || !name.trim()}>
           {busy ? "Enregistrement…" : "Enregistrer mes préférences"}
@@ -172,7 +174,7 @@ export function Preferences() {
         </button>
         {saved && (
           <p className="success" role="status">
-            Préférences enregistrées sur cet appareil.
+            {serverMode ? "Préférences enregistrées dans votre compte." : "Préférences enregistrées sur cet appareil."}
           </p>
         )}
         {error && (
@@ -251,6 +253,7 @@ export function Auth({
     try {
       if (kind === "login") {
         const profile = await serverApi.login(email, password);
+        queryClient.clear();
         queryClient.setQueryData(["me"], profile);
         form.reset();
         navigate("/app", { replace: true });
@@ -262,7 +265,7 @@ export function Auth({
         );
         form.reset();
         setNotice(
-          "Demande d’inscription transmise. Suivez les instructions de confirmation du service.",
+          "Compte créé. Vous pouvez maintenant vous connecter à LEXORA.",
         );
       } else if (kind === "forgot") {
         await serverApi.forgot(email);

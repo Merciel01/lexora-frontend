@@ -47,7 +47,7 @@ export default function App() {
     document.getElementById("main-content")?.focus({ preventScroll: true });
     document.title =
       (document.querySelector("h1")?.textContent || "L’art de convaincre") +
-      " — Lexora";
+      " — LEXORA";
   }, [location.pathname]);
   useEffect(() => {
     document.documentElement.dataset.reduced = String(getPreferences().reduced);
