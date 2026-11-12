@@ -638,6 +638,7 @@ export function Trial() {
         <button
           className="button secondary"
           aria-pressed={sound}
+          disabled={serverMode && !s.ttsAvailable}
           onClick={toggleSound}
         >
           {sound ? <VolumeX size={17} /> : <Volume2 size={17} />}{" "}
@@ -645,7 +646,7 @@ export function Trial() {
         </button>
         <p>
           {serverMode
-            ? "Réponses vocales du serveur"
+            ? s.ttsAvailable ? "Voix serveur activée ; la transcription reste accessible." : "Voix serveur non activée. Les échanges texte sont disponibles."
             : "Voix locale de simulation, facultative. Aucune réponse IA réelle."}
         </p>
         {playbackDelay !== undefined && (

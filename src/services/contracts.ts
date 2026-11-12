@@ -1,4 +1,6 @@
 import { z } from "zod";
+export const preferencesSchema = z.object({ reduced: z.boolean(), sound: z.boolean(), subtitles: z.boolean(), quality: z.enum(["auto", "low", "high"]), localVoice: z.boolean(), voiceUri: z.string().max(1000), captureMode: z.enum(["hold", "toggle"]) });
+export const noteSchema = z.object({ text: z.string().max(10000) });
 export const speakerIds = [
   "president",
   "assessor-1",
@@ -114,6 +116,7 @@ export const snapshotSchema = z.object({
   activeSpeaker: z.enum(speakerIds),
   seq: z.number().int().nonnegative().default(0),
   audioCodecs: z.array(z.string()).default([]),
+  ttsAvailable: z.boolean().default(false),
   startedAt: z.string(),
   endAt: z.string().optional(),
   websocketUrl: z.string().optional(),

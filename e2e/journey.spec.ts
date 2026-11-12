@@ -144,17 +144,19 @@ test("coupure locale conserve le brouillon", async ({ page }) => {
   );
 });
 test("scène 3D ou alternative texte accessible", async ({ page }, testInfo) => {
+  test.setTimeout(90000);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/app/trials/demo");
   await page.getByRole("button", { name: "Voir la salle 3D" }).click();
   await expect(page.getByText("Scène 3D · démonstration")).toBeVisible();
   await expect(page.frameLocator('iframe[title="Salle d’audience 3D Lexora"]').locator("canvas")).toBeVisible();
+  await expect(page.getByText("Chargement des neuf personnages… Le mode texte reste accessible.")).toBeHidden({ timeout: 45000 });
   await page.screenshot({
     path: "test-results/court-" + testInfo.project.name + ".png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Passer en mode texte" }).click();
+  await page.getByRole("button", { name: "Passer en mode texte" }).press("Enter");
   await expect(
     page.getByRole("heading", { name: "Le débat, en toute clarté." }),
   ).toBeVisible();

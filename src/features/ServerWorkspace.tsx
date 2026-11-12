@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { serverApi, ApiError } from "../services/api";
+import { savePreferences } from "../services/preferences";
 import Home from "./Home";
 import { HistoryList, ProgressView } from "./Results";
 export function SessionGuard({ children }: { children: ReactNode }) {
@@ -13,6 +14,8 @@ export function SessionGuard({ children }: { children: ReactNode }) {
     retry: false,
     staleTime: 30000,
   });
+  const preferences = useQuery({ queryKey: ["preferences"], queryFn: () => serverApi.getPreferences(), enabled: !!session.data, retry: false });
+  useEffect(() => { if (preferences.data) savePreferences(preferences.data); }, [preferences.data]);
   useEffect(() => {
     const expire = () => queryClient.setQueryData(["me"], null);
     window.addEventListener("lexora-session-expired", expire);

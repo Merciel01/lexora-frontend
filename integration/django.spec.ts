@@ -1,0 +1,100 @@
+import { test, expect } from "@playwright/test";
+
+test("parcours LEXORA contre Django réel, sans interception réseau", async ({ page }) => {
+  const errors: string[] = [];
+  const audioUrls: string[] = [];
+  page.on("websocket", socket => socket.on("framereceived", frame => {
+    if (typeof frame.payload !== "string") return;
+    const event = JSON.parse(frame.payload);
+    if (event.type === "audio") audioUrls.push(event.url);
+  }));
+  page.on("pageerror", error => errors.push(error.message));
+  const email = `integration-${Date.now()}@lexora.test`;
+  const password = "kR9!vW2#tH7@qM5";
+  await page.goto("/register");
+  await page.getByLabel("Nom complet").fill("Étudiant intégration réelle");
+  await page.getByLabel("Adresse e-mail").fill(email);
+  await page.getByLabel("Mot de passe", { exact: true }).fill(password);
+  await page.getByLabel("Confirmer le mot de passe").fill(password);
+  const registration = page.waitForResponse(r => r.url().endsWith("/api/auth/register"));
+  await page.getByRole("button", { name: "Créer mon compte" }).click();
+  const registered = await registration;
+  expect(registered.status(), await registered.text()).toBe(201);
+  await expect(page.getByText("Compte créé. Vous pouvez maintenant vous connecter à LEXORA.")).toBeVisible();
+  await page.goto("/login");
+  await page.getByLabel("Adresse e-mail").fill(email);
+  await page.getByLabel("Mot de passe", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Se connecter", exact: true }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await page.getByRole("link", { name: "Commencer une simulation" }).click();
+  await page.getByRole("link", { name: "Choisir un dossier" }).click();
+  await page.getByRole("link", { name: "Consulter le dossier" }).first().click();
+  const caseId = page.url().split("/").at(-1)!;
+  await expect(page.getByRole("tab", { name: "Pièces (4)" })).toBeVisible();
+  await page.getByRole("tab", { name: "Mes notes", exact: true }).click();
+  await page.getByLabel("Plan et arguments — notes privées de votre compte").fill("Mon plan privé enregistré par Django.");
+  await page.getByRole("button", { name: "Enregistrer mes notes" }).click();
+  await expect(page.getByText("Notes enregistrées dans votre compte.")).toBeVisible();
+  await page.reload();
+  await page.getByRole("tab", { name: "Mes notes", exact: true }).click();
+  await expect(page.getByLabel("Plan et arguments — notes privées de votre compte")).toHaveValue("Mon plan privé enregistré par Django.");
+  await page.getByRole("link", { name: "Vérifier mon équipement" }).click();
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  await expect(page.getByText("CONNECTÉ À DJANGO")).toBeVisible();
+  const trialId = page.url().split("/").at(-1)!;
+  const state = async () => (await page.request.get(`/api/trials/${trialId}`)).json();
+  expect((await state()).caseId).toBe(caseId);
+  await page.getByRole("button", { name: "Voir la salle 3D" }).click();
+  await expect(page.frameLocator('iframe[title="Salle d’audience 3D Lexora"]').locator("canvas")).toBeVisible();
+  await expect(page.getByText("Chargement des neuf personnages… Le mode texte reste accessible.")).toBeHidden({ timeout: 45000 });
+  await page.screenshot({ path: "test-results/lexora-django-real.png", fullPage: true });
+  await page.getByRole("button", { name: "Passer en mode texte" }).click();
+  for (let step = 1; step <= 2; step++) {
+    await page.getByRole("button", { name: "Écouter la cour", exact: true }).click();
+    await expect.poll(async () => (await state()).step).toBe(step);
+  }
+  await expect(page.getByLabel("Votre argumentation")).toBeEnabled();
+  await page.getByLabel("Votre argumentation").fill("Premièrement, je distingue les éléments établis des hypothèses et je demande un examen contradictoire des pièces du dossier.");
+  await page.getByRole("button", { name: "Envoyer", exact: true }).click();
+  await expect(page.getByLabel("Votre argumentation")).toHaveValue("");
+  if (process.env.LEXORA_TEST_PIPER_MODEL) {
+    await expect.poll(() => audioUrls.length).toBeGreaterThan(0);
+    const audio = await page.request.get(audioUrls[0]);
+    expect(audio.status()).toBe(200);
+    expect(audio.headers()["content-type"]).toBe("audio/wav");
+    expect((await audio.body()).subarray(0, 4).toString()).toBe("RIFF");
+  }
+  expect((await state()).entries.some((e: { speaker: string }) => e.speaker === "Vous")).toBe(true);
+  await page.reload();
+  await expect(page.getByText("CONNECTÉ À DJANGO")).toBeVisible();
+  await expect(page.getByLabel("Votre argumentation")).toBeEnabled();
+  for (let step = 3; step <= 5; step++) {
+    await page.getByRole("button", { name: "Écouter la cour", exact: true }).click();
+    await expect.poll(async () => (await state()).step).toBe(step);
+  }
+  await page.getByRole("button", { name: "Consulter le jugement", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Consulter mon évaluation" })).toBeVisible();
+  await page.getByRole("link", { name: "Consulter mon évaluation" }).click();
+  await expect(page.getByText("Exercice terminé — bilan pédagogique")).toBeVisible();
+  const me = await (await page.request.get("/api/me")).json();
+  expect(me.xp).toBeGreaterThan(0);
+  await page.reload();
+  expect((await (await page.request.get("/api/me")).json()).xp).toBe(me.xp);
+  await page.goto("/app/history");
+  await expect(page.getByText("Terminée", { exact: true }).first()).toBeVisible();
+  await page.goto("/app/settings");
+  await page.getByLabel("Nom affiché").fill("Compte LEXORA sauvegardé");
+  await page.getByLabel("Qualité 3D").selectOption("low");
+  await page.getByRole("button", { name: "Enregistrer mes préférences" }).click();
+  await expect(page.getByText("Préférences enregistrées dans votre compte.")).toBeVisible();
+  await page.getByRole("button", { name: "Se déconnecter", exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.getByLabel("Adresse e-mail").fill(email);
+  await page.getByLabel("Mot de passe", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Se connecter", exact: true }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await page.goto("/app/settings");
+  await expect(page.getByLabel("Nom affiché")).toHaveValue("Compte LEXORA sauvegardé");
+  await expect(page.getByLabel("Qualité 3D")).toHaveValue("low");
+  expect(errors).toEqual([]);
+});

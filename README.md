@@ -1,16 +1,18 @@
-# Lexora — frontend
+# LEXORA — frontend
 
 Application pédagogique de simulation de procès pour étudiants en droit. Interface française responsive, participation texte, capture vocale, salle 3D procédurale, pièces, verdict et progression.
 
-**Deux modes strictement séparés :** démonstration autonome avec dossiers fictifs et scénario déterministe ; intégration Django via des adaptateurs REST/WebSocket et un contrat proposé. Aucun fournisseur IA ni backend n’est inclus dans ce dépôt. Les résultats démo ne constituent pas une évaluation juridique ou une analyse IA réelle.
+**Le mode serveur est maintenant le défaut**, relié au dépôt Django voisin. Inscription, profil, catalogue, notes, préférences, audiences, messages WebSocket, résultats, historique et progression sont testés contre Django réel. La démo reste explicite et séparée. Voir [le lancement des deux dépôts et la recette réelle](docs/django-integration.md). Aucun secret fournisseur n'est livré au navigateur.
 
-La salle 3D utilise désormais les neuf personnages et le décor Skillforce v27. Elle suit les événements existants de Lexora ; « Explorer la salle 3D » ouvre séparément les démonstrations de passage à la barre et les contrôles complets. Voir [l’intégration de la salle](public/courtroom/README.md). Le contrat Django reste inchangé.
+La salle 3D utilise les neuf personnages et le décor Skillforce v27. Elle suit les événements de LEXORA ; « Explorer la salle 3D » ouvre séparément les démonstrations de passage à la barre et les contrôles complets. Voir [l’intégration de la salle](public/courtroom/README.md).
 
 ![Accueil Lexora en démonstration](docs/images/home-desktop.png)
 
 ## Démarrage rapide
 
 Node **22.22.1** (voir `.nvmrc`), npm et navigateur récent.
+
+Le backend se lance via `scripts/start-lexora.ps1` dans le dépôt voisin et utilise son propre port 8100. Sans backend, sélectionner explicitement `VITE_APP_MODE=demo` pour parcourir la démonstration.
 
 ```sh
 npm ci

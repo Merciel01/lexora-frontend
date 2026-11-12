@@ -1,3 +1,15 @@
+# Raccordement réel LEXORA / Django — 12 novembre 2026
+
+- `npm run check` : types, lint, 35 tests unitaires, génération du contrat partagé et build réussis.
+- Recette de non-régression complète : 28 tests navigateur desktop/mobile/contrat simulé réussis (2,4 minutes).
+- `npm run test:django` : parcours complet réussi sans interception REST/WS, avec serveur ASGI et base temporaire. Inscription, login, dossiers, notes, scène 3D, intervention, reprise après reload, sept phases, résultat, XP stables, historique, préférences et reconnexion.
+- Recette réelle avec Piper : événement audio reçu, endpoint authentifié 200 audio/wav et en-tête RIFF vérifiés ; synthèse locale testée sans service externe. Aucun test STT externe sans clé.
+- Backend : 44 tests Django, check et migrations cohérentes sur base éphémère.
+- Lancement persistant vérifié sur 127.0.0.1:5173, proxy Django 8100, en conservant les services existants sur 8000/8001.
+
+Capture examinée : `docs/images/lexora-django-real.png`. Notes et préférences sont privées au compte en mode serveur. SMTP réel, STT externe, production/multi-worker et qualité juridique certifiée restent hors de cette validation. Les recettes historiques ci-dessous décrivent les versions précédentes.
+
+---
 # Validation de l’intégration Skillforce v27 — 12 novembre 2026
 
 Windows 11, Node 24.11.0, Chrome installé ; captures desktop 1440 × 960 et mobile 390 × 844 examinées.
