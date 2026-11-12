@@ -111,6 +111,9 @@ export const serverApi = {
       method: "POST",
       body: json({ email, password }),
     });
+    // Django rotates the CSRF secret on login. Fetch a fresh token before
+    // the next mutation instead of reusing the anonymous session's token.
+    csrf = "";
     return api.getProfile();
   },
   async logout() {
