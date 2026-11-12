@@ -30,13 +30,16 @@ export async function request<T>(
 ): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
+  const cancel = () => controller.abort();
+  options.signal?.addEventListener("abort", cancel, { once: true });
+  if (options.signal?.aborted) controller.abort();
   const method = options.method || "GET";
   try {
     if (method !== "GET" && !csrf) await serverApi.csrf();
     const response = await fetch(base + path, {
       ...options,
       credentials: "include",
-      signal: options.signal || controller.signal,
+      signal: controller.signal,
       headers: {
         Accept: "application/json",
         ...(options.body ? { "Content-Type": "application/json" } : {}),
@@ -80,6 +83,7 @@ export async function request<T>(
     );
   } finally {
     clearTimeout(timer);
+    options.signal?.removeEventListener("abort", cancel);
   }
 }
 const empty = z.union([z.void(), z.object({ detail: z.string().optional() })]);

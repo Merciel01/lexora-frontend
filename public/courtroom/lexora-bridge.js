@@ -4,6 +4,7 @@
   const roles = { president: "president", "assessor-1": "assesseur_01", "assessor-2": "assesseur_02", prosecutor: "ministere_public", opposition: "avocat_adverse", clerk: "greffier", student: "etudiant_avocat" };
   let ready = false, pending = null, previous = null;
   const send = (type, extra = {}) => parent.postMessage({ channel: "lexora-courtroom", version: 1, type, ...extra }, location.origin);
+  window.lexoraSceneProgress = (loaded, total) => send("progress", { loaded, total });
   window.lexoraSceneUnavailable = () => send("unavailable");
   window.lexoraSceneReady = () => {
     ready = true;
@@ -14,7 +15,7 @@
     send("ready", { characters: results.loaded.length, sceneVersion: 27 });
   };
   function valid(state) {
-    return state && typeof state === "object" && Object.hasOwn(roles, state.activeSpeaker) && typeof state.speaking === "boolean" && typeof state.objection === "boolean" && typeof state.reduced === "boolean" && ["auto", "low", "high"].includes(state.quality) && ["wide", "speaker"].includes(state.cameraMode) && typeof state.gesture === "string" && state.gesture.length < 80 && typeof state.emotion === "string" && state.emotion.length < 80;
+    return state && typeof state === "object" && Object.hasOwn(roles, state.activeSpeaker) && typeof state.speaking === "boolean" && typeof state.objection === "boolean" && typeof state.reduced === "boolean" && ["auto", "low", "high"].includes(state.quality) && ["wide", "speaker", "student"].includes(state.cameraMode) && typeof state.gesture === "string" && state.gesture.length < 80 && typeof state.emotion === "string" && state.emotion.length < 80;
   }
   function apply(state) {
     const id = roles[state.activeSpeaker], actor = actors[id];
@@ -33,7 +34,7 @@
       if (state.speaking) { speakerId = id; takeFloor(id, mode, null, variant); }
       else { speakerId = id; quiet(actor); }
     }
-    if (!previous || previous.cameraMode !== state.cameraMode || (state.cameraMode === "speaker" && previous.activeSpeaker !== state.activeSpeaker)) chooseView(state.cameraMode === "wide" ? "general" : id);
+    if (!previous || previous.cameraMode !== state.cameraMode || (state.cameraMode === "speaker" && previous.activeSpeaker !== state.activeSpeaker)) chooseView(state.cameraMode === "wide" ? "general" : state.cameraMode === "student" ? "student" : id);
     previous = { ...state };
   }
   window.addEventListener("message", event => {

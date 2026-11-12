@@ -8,6 +8,8 @@ import {
   BookOpen,
   ArrowRight,
   Scale,
+  ChevronDown,
+  FileText,
 } from "lucide-react";
 import { read, write } from "../services/storage";
 import { serverMode, serverApi } from "../services/api";
@@ -15,6 +17,7 @@ import { getDemoRoles, getDemoCases, getDemoCase } from "../services/demo";
 import { Heading, Action, Badge } from "../components/Layout";
 import { ExhibitViewer } from "../components/ExhibitViewer";
 import { Modal } from "../components/Modal";
+import { PreparationGuide } from "./guide/PreparationGuide";
 export function RolePicker() {
   const [selected, setSelected] = useState(read("role", "defense"));
   const query = useQuery({
@@ -259,6 +262,7 @@ export function Reader() {
   const [notesStatus, setNotesStatus] = useState("");
   const remoteNotes = useQuery({ queryKey: ["notes", caseId], queryFn: () => serverApi.getNotes(caseId), enabled: serverMode, retry: false });
   useEffect(() => { if (remoteNotes.data) setNote(remoteNotes.data.text); }, [remoteNotes.data]);
+  const roleId = read("role", "defense");
   useEffect(() => {
     setNote(serverMode ? "" : read("notes:" + caseId, ""));
     setTab("Faits");
@@ -287,6 +291,16 @@ export function Reader() {
     );
   const c = query.data;
   const compatible = c.roleIds.includes(read("role", "defense"));
+  function showExhibits(ids: string[]) {
+    setTab("Pièces");
+    requestAnimationFrame(() => {
+      document.getElementById("tab-1")?.focus();
+      for (const id of ids) {
+        const element = document.getElementById("exhibit-" + id);
+        if (element instanceof HTMLDetailsElement) element.open = true;
+      }
+    });
+  }
   return (
     <>
       <Heading
@@ -357,7 +371,7 @@ export function Reader() {
               <h2>Pièces du dossier</h2>
               {c.exhibits.length ? (
                 c.exhibits.map((e) => (
-                  <details key={e.id}>
+                  <details key={e.id} id={"exhibit-" + e.id}>
                     <summary>
                       {e.id} · {e.title}
                     </summary>
@@ -409,26 +423,58 @@ export function Reader() {
           )}
         </section>
         <aside className="reader-aside">
-          <section className="panel">
-            <Badge>VOTRE OBJECTIF</Badge>
-            <h3>Une argumentation convaincante</h3>
-            <p>
-              Défendez la position de votre client en vous appuyant sur les
-              pièces du dossier.
-            </p>
-          </section>
-          <section className="panel">
-            <h3>Pièces à examiner</h3>
-            {c.exhibits.map((e) => (
-              <p className="exhibit-line" key={e.id}>
-                {e.id} · {e.title}
+          <PreparationGuide
+            key={c.id + ":" + roleId}
+            caseDetail={c}
+            roleId={roleId}
+            noteLength={note.length}
+            onAddNotes={(text) => {
+              const next = note ? note + "\n\n" + text : text;
+              if (next.length > 10000) return;
+              setNote(next);
+              if (!serverMode) write("notes:" + caseId, next);
+              setNotesStatus(serverMode ? "Plan ajouté. Enregistrez vos notes pour le conserver dans votre compte." : "");
+              setTab("Mes notes");
+              requestAnimationFrame(() =>
+                document.getElementById("tab-2")?.focus(),
+              );
+            }}
+            onShowExhibits={showExhibits}
+          />
+          <details className="panel reader-accordion" name="reader-tools">
+            <summary>
+              <Scale size={17} aria-hidden="true" />
+              <span>Objectif de préparation</span>
+              <ChevronDown size={16} aria-hidden="true" />
+            </summary>
+            <div className="reader-accordion-body">
+              <h3>Une argumentation convaincante</h3>
+              <p>
+                Défendez la position de votre client en vous appuyant sur les
+                pièces du dossier.
               </p>
-            ))}
-          </section>
-          <div className="tip">
-            <Scale size={23} />
-            <p>Distinguez les faits, les preuves et vos arguments.</p>
-          </div>
+              <p>Distinguez les faits, les preuves et vos arguments.</p>
+            </div>
+          </details>
+          <details className="panel reader-accordion" name="reader-tools">
+            <summary>
+              <FileText size={17} aria-hidden="true" />
+              <span>Pièces à examiner ({c.exhibits.length})</span>
+              <ChevronDown size={16} aria-hidden="true" />
+            </summary>
+            <div className="reader-accordion-body">
+              {c.exhibits.map((e) => (
+                <button
+                  type="button"
+                  className="reader-exhibit-link"
+                  key={e.id}
+                  onClick={() => showExhibits([e.id])}
+                >
+                  {e.id} · {e.title}
+                </button>
+              ))}
+            </div>
+          </details>
         </aside>
       </div>
       <div className="page-actions end">
