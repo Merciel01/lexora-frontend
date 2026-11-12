@@ -149,7 +149,7 @@ test("scène 3D ou alternative texte accessible", async ({ page }, testInfo) => 
   await page.goto("/app/trials/demo");
   await page.getByRole("button", { name: "Voir la salle 3D" }).click();
   await expect(page.getByText("Scène 3D · démonstration")).toBeVisible();
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(page.frameLocator('iframe[title="Salle d’audience 3D Lexora"]').locator("canvas")).toBeVisible();
   await page.screenshot({
     path: "test-results/court-" + testInfo.project.name + ".png",
     fullPage: true,

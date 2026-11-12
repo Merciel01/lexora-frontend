@@ -14,7 +14,7 @@
 - États explicites d’audience, brouillon conservé jusqu’à acceptation, réessai avec identifiant stable, droits d’action issus du snapshot.
 - REST complet selon proposition : session/CSRF, rôles, dossiers, procès, résultats, historique et profil. Aucun fallback mock en mode serveur.
 - WebSocket proposé : resynchronisation, séquence, déduplication, backoff avec jitter et limite, expiration terminale et reprise manuelle, envois bornés et nettoyage.
-- Sept personnages procéduraux, écoute/parole/bras d’objection/bouche approximative, caméra générale/intervenant, valeurs inconnues normalisées, qualité et mouvement réduit, alternative texte.
+- Salle Skillforce v27 avec neuf personnages GLB, mobilier complet, barre et balustrades, emblème et drapeau ; les sept identifiants d’intervenants du contrat pilotent la scène intégrée. Caméras, qualité, mouvement réduit et alternative texte conservés. L’explorateur séparé expose les séquences du prévenu et du témoin à la barre ; aucun scénario autonome ne concurrence les tours de la session. La bouche reste indicative, sans synchronisation labiale réelle.
 - Préférences locales son, sous-titres, voix, qualité 3D, capture accessible et mouvement réduit.
 - Tests unitaires et E2E demo/contrat Django simulé ; workflow GitHub Actions.
 

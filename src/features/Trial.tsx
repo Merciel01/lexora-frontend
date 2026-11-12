@@ -501,6 +501,7 @@ export function Trial() {
       {!textMode && (
         <>
           <div className="scene-controls">
+            <a className="text-button" href={`${import.meta.env.BASE_URL}courtroom/index.html`} target="_blank" rel="noopener noreferrer">Explorer la salle 3D</a>
             <button
               className="text-button"
               onClick={() =>

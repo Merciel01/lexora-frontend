@@ -2,3 +2,5 @@
 *.png binary
 *.jpg binary
 *.woff2 binary
+*.glb binary
+public/courtroom/engine.js -whitespace
