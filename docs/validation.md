@@ -72,3 +72,9 @@ Vérifications : trois points de vue, qualité persistante, sept intervenants pi
 Les serveurs de cette recette finale sont isolés sur 5273 et 5274 dans une copie de vérification, avec un cache de dépendances distinct. Le code applicatif testé est celui de la branche ; seuls les ports et les chemins autorisés des dépendances sont adaptés dans la copie. Captures examinées : `docs/images/courtroom-adapted-desktop.png` et `docs/images/courtroom-adapted-mobile.png`.
 
 Le build livre environ 486 ko de JavaScript principal (150 ko gzip), un adaptateur 3D différé de 2,4 ko (1,15 ko gzip), le moteur isolé existant et les mêmes 38 Mo de modèles. Pas de réduction annoncée du poids des GLB, de mesure de fluidité sur GPU réel ou de recette sur téléphone physique. Le chargement est plus tolérant aux réseaux lents, sans prétendre à une validation sur réseau mobile réel. Django, IA, STT et TTS réels restent à connecter et à valider côté backend.
+
+## Image d’accueil — 12 novembre 2026
+
+La capture de la salle fournie par l’utilisateur est recadrée pour retirer le navigateur, les menus et la transcription, puis encodée en WebP (2 069 × 760, environ 110 ko). Elle remplace l’illustration de l’accueil. Le bandeau présente texte et image côte à côte sur grand écran, puis empilés avec un cadrage central sur mobile.
+
+Build et lint réussis. Vérification Chrome du build à 1440 × 960 et 390 × 844 : image chargée, texte alternatif présent, lien de simulation conservé, aucune erreur JavaScript et aucun débordement horizontal. Captures d’accueil actualisées et examinées. La suite complète d’audience n’a pas été relancée pour ce changement visuel.
