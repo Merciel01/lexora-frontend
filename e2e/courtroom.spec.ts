@@ -45,7 +45,8 @@ test("l’explorateur conserve les deux cycles complets à la barre", async ({ p
   test.setTimeout(120000);
   await page.goto("/courtroom/index.html");
   await expect(page.locator("#status")).toContainText("9 personnages", { timeout: 45000 });
-  await page.evaluate("manualCourtTest=true;paused=false;document.getElementById('reduceMotion').checked=true;startBarDemo();");
+  // The live renderer is verified above. Avoid software-GPU work while fast-stepping simulation/IK in CI.
+  await page.evaluate("renderer.render=()=>{};manualCourtTest=true;paused=false;document.getElementById('reduceMotion').checked=true;startBarDemo();");
   let done = false;
   for (let batch = 0; batch < 180; batch++) {
     done = await page.evaluate("(()=>{for(let i=0;i<12;i++)simulationTick(1/24);return courtVisit===null&&courtQueue.length===0;})()");

@@ -6,7 +6,7 @@ Windows 11, Node 24.11.0, Chrome installé ; captures desktop 1440 × 960 et mob
 - `npm run test:e2e` : 28 tests réussis en 2,3 minutes, desktop/mobile et contrat Django simulé.
 - Neuf personnages et décor GLB chargés ; empreintes SHA-256 et syntaxe des quatre scripts vérifiées.
 - Les sept rôles existants pilotent le bon personnage, sans scénario autonome concurrent dans l’audience intégrée.
-- Explorateur : appel du prévenu puis du témoin, marche vers la barre, intervention, retour et assise ; erreur de cible des pieds inférieure à 5 mm.
+- Explorateur : appel du prévenu puis du témoin, marche vers la barre, intervention, retour et assise ; erreur de cible des pieds inférieure à 5 mm. Le test de simulation accélérée coupe les appels de rendu pendant son pas-à-pas pour les runners sans GPU ; les tests de chargement et captures utilisent le vrai rendu WebGL.
 - GLB absent : repli texte utilisable ; les parcours, le micro local et les échanges REST/WS simulés restent couverts.
 
 Captures : `docs/images/courtroom-v27-desktop.png` et `docs/images/courtroom-v27-mobile.png`.
