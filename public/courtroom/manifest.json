@@ -1,0 +1,57 @@
+{
+  "version": 27,
+  "source": "Skillforce v27",
+  "engine": "Three.js r182 (isolated from the React renderer)",
+  "assets": [
+    {
+      "id": "assesseur_01",
+      "file": "assets/assesseur_01_v08.glb",
+      "sha256": "af25f862d88ea92f0099e2ec1f9758cff4f793a0907461b69fc66626560cbb35"
+    },
+    {
+      "id": "assesseur_02",
+      "file": "assets/assesseur_02_v08.glb",
+      "sha256": "942456d98803157756e341d74a6df539a5f0c6042856fdb1315d338de9c0737f"
+    },
+    {
+      "id": "avocat_adverse",
+      "file": "assets/avocat_adverse_v08.glb",
+      "sha256": "1dac22862cd97744ffba99925bafd93327f8f49b40741d33175d9dbe49c1f858"
+    },
+    {
+      "id": "etudiant_avocat",
+      "file": "assets/etudiant_avocat_v08.glb",
+      "sha256": "828f022e71fe3e7b1f0d3ab86a4e30997910b5e7a4de2a3e3fd69c648228feb2"
+    },
+    {
+      "id": "greffier",
+      "file": "assets/greffier_v08.glb",
+      "sha256": "3a20a8f8bd0c3522029828bde5921c9a82500215a728c9861929a610ad476f09"
+    },
+    {
+      "id": "ministere_public",
+      "file": "assets/ministere_public_v08.glb",
+      "sha256": "6e2d2a435ef3090edabce5747e22f23e1862577521c51f40bfd810eb14e01e72"
+    },
+    {
+      "id": "president",
+      "file": "assets/president_v08.glb",
+      "sha256": "6f2c4ebdef48feb262d51ee8d1cbbce2d7c5adfc73d585688be62bb4bf02676c"
+    },
+    {
+      "id": "client_prevenu",
+      "file": "assets/client_prevenu_v19.glb",
+      "sha256": "71c7ef13be071dd0d42637a0d5065540ac9afb7b0b286137a31d5e864add787d"
+    },
+    {
+      "id": "temoin_01",
+      "file": "assets/temoin_01_v02.glb",
+      "sha256": "1665ece5b8614f3b7e21793018863cf7f7e231f9dccd2c7b760b86dbd138e08f"
+    },
+    {
+      "id": "decor",
+      "file": "assets/salle_decor_v27.glb",
+      "sha256": "8cc45b3dfd2cea3dd143780b36ef5c32d55ae40f98a9eb5750d1e62292d538c5"
+    }
+  ]
+}

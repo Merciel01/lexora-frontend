@@ -1,3 +1,22 @@
+# Validation de l’intégration Skillforce v27 — 12 novembre 2026
+
+Windows 11, Node 24.11.0, Chrome installé ; captures desktop 1440 × 960 et mobile 390 × 844 examinées.
+
+- `npm run check` réussi : types, lint, 34 tests unitaires, contrat OpenAPI inchangé et build.
+- `npm run test:e2e` : 28 tests réussis en 2,3 minutes, desktop/mobile et contrat Django simulé.
+- Neuf personnages et décor GLB chargés ; empreintes SHA-256 et syntaxe des quatre scripts vérifiées.
+- Les sept rôles existants pilotent le bon personnage, sans scénario autonome concurrent dans l’audience intégrée.
+- Explorateur : appel du prévenu puis du témoin, marche vers la barre, intervention, retour et assise ; erreur de cible des pieds inférieure à 5 mm.
+- GLB absent : repli texte utilisable ; les parcours, le micro local et les échanges REST/WS simulés restent couverts.
+
+Captures : `docs/images/courtroom-v27-desktop.png` et `docs/images/courtroom-v27-mobile.png`.
+Build : JavaScript principal 469 ko (146 ko gzip), adaptateur React 3D différé 1,58 ko (0,84 ko gzip), moteur isolé 2,32 Mo et environ 38 Mo d’actifs GLB chargés à l’ouverture de la 3D. Aucun CDN requis. Les deux avertissements Rollup sur des annotations Zod restent sans effet sur le build.
+
+Limites : pas de recette avec Django réel, ni de rôles serveur prévenu/témoin ajoutés. Leur séquence complète est disponible dans l’explorateur distinct. Marche procédurale dans le navigateur, bouche indicative sans synchronisation vocale réelle. Pas de mesure garantissant les FPS sur tous les GPU ni de test sur téléphone physique/Safari/Firefox. Les limites et licences figurent aussi dans `public/courtroom/README.md`.
+
+La validation historique ci-dessous concerne la version précédant cette intégration.
+
+---
 # Validation — version 0.2.0, 9 novembre 2026
 
 Environnement local : Node 22.22.1, npm 9.2.0, Linux, Chrome installé. Les médias des tests proviennent du périphérique synthétique du navigateur.
