@@ -253,7 +253,9 @@ test("guide Django : notes privées exclues et réessai idempotent", async ({
   await page
     .getByLabel("Plan et arguments")
     .fill("Note personnelle confidentielle");
-  await page.getByRole("button", { name: "Préparer avec le guide" }).click();
+  await page
+    .getByRole("button", { name: "Poser une question", exact: true })
+    .click();
   await page
     .getByLabel("Votre question de préparation")
     .fill("Comment classer les faits ?");
@@ -266,6 +268,10 @@ test("guide Django : notes privées exclues et réessai idempotent", async ({
     .getByLabel("Votre question de préparation")
     .fill("Une autre question à conserver");
   await page.getByRole("button", { name: "Réessayer la question" }).click();
+  await page
+    .getByRole("region", { name: "Échanges avec le guide" })
+    .getByText("Vue d’ensemble", { exact: true })
+    .click();
   await expect(
     page.getByText("Conseils reçus du serveur de test.", { exact: true }),
   ).toBeVisible();
@@ -300,7 +306,9 @@ test("guide refuse une réponse portant sur une pièce inconnue", async ({
     });
   });
   await page.goto("/app/cases/limete");
-  await page.getByRole("button", { name: "Préparer avec le guide" }).click();
+  await page
+    .getByRole("button", { name: "Poser une question", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Examiner les pièces", exact: true })
     .click();
@@ -308,4 +316,62 @@ test("guide refuse une réponse portant sur une pièce inconnue", async ({
   await expect(
     page.getByText("Cette réponse ne doit pas être affichée."),
   ).toHaveCount(0);
+});
+test("menus du guide : requête conservée et réponse réutilisée à la réouverture", async ({
+  page,
+}) => {
+  await mock(page);
+  let release = () => {};
+  const ready = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let requests = 0;
+  await page.route("**/api/cases/limete/guide", async (route) => {
+    requests++;
+    const input = route.request().postDataJSON();
+    await ready;
+    await route.fulfill({
+      json: {
+        id: "cached-guide",
+        caseId: "limete",
+        clientMessageId: input.clientMessageId,
+        introduction: "Réponse conservée.",
+        steps: [
+          {
+            title: "Étape conservée",
+            detail: "Un conseil disponible sans nouvelle requête.",
+            exhibitIds: [],
+          },
+        ],
+        questions: [],
+        citations: [],
+      },
+    });
+  });
+  await page.goto("/app/cases/limete");
+  const menu = page.getByRole("button", {
+    name: "Par où commencer ?",
+    exact: true,
+  });
+  await menu.click();
+  await expect(
+    page.getByText("Le guide prépare ses conseils…", { exact: true }),
+  ).toBeVisible();
+  await menu.click();
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await expect(menu).toBeEnabled();
+  await menu.click();
+  await expect(
+    page.getByText("Le guide prépare ses conseils…", { exact: true }),
+  ).toBeVisible();
+  release();
+  await expect(
+    page.getByText("Étape conservée", { exact: true }),
+  ).toBeVisible();
+  await menu.click();
+  await menu.click();
+  await expect(
+    page.getByText("Étape conservée", { exact: true }),
+  ).toBeVisible();
+  expect(requests).toBe(1);
 });

@@ -2,7 +2,11 @@
 
 Le guide apparaît sur `/app/cases/:caseId`, dans la colonne de préparation. Il aide à organiser une argumentation ; il ne promet pas une décision favorable et ne rend pas le jugement. Les conseils sont disponibles avant l’audience, sans modifier l’orchestration du procès.
 
-![Guide de préparation sur desktop](images/preparation-guide-desktop.png)
+![Guide de préparation sur desktop](images/preparation-guide-compact-desktop.png)
+
+## Présentation compacte
+
+Le guide affiche quatre menus repliés par défaut. Une seule rubrique est ouverte à la fois ; chaque réponse se consulte par sous-menus (vue d’ensemble, étapes, questions et sources), sans empiler tous les échanges dans la page. Le contenu d’une rubrique reste dans une zone de hauteur limitée. La saisie apparaît seulement dans « Poser une question ». Les réponses reçues sont réutilisées à la réouverture ; « Actualiser les conseils » permet de demander une nouvelle réponse. Les blocs Objectif et Pièces de la colonne sont également repliables.
 
 ## Parcours
 

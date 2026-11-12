@@ -4,19 +4,130 @@ import {
   BookOpen,
   Check,
   ChevronDown,
-  ChevronUp,
+  FileText,
+  Info,
+  ListChecks,
+  ListTree,
   MessageSquare,
+  RefreshCw,
   Sparkles,
 } from "lucide-react";
 import type {
   CaseDetail,
+  GuideIntent,
   GuideRequest,
   GuideResponse,
 } from "../../services/contracts";
 import { serverMode } from "../../services/api";
 import { safeUrl } from "../../services/urls";
 import { askGuide, guideNotes, guidePrompts } from "../../services/guide";
-import { Badge } from "../../components/Layout";
+type Turn = { intent: GuideIntent; question: string; response: GuideResponse };
+const menus = [
+  ...guidePrompts.map((prompt, index) => ({
+    ...prompt,
+    icon: [ListChecks, FileText, ListTree][index],
+  })),
+  {
+    intent: "question" as const,
+    label: "Poser une question",
+    message: "",
+    icon: MessageSquare,
+  },
+];
+function Advice({
+  response,
+  group,
+  onShowExhibits,
+}: {
+  response: GuideResponse;
+  group: string;
+  onShowExhibits: (ids: string[]) => void;
+}) {
+  return (
+    <div
+      className="guide-submenus"
+      role="region"
+      aria-label="Échanges avec le guide"
+    >
+      <details className="guide-submenu" name={group}>
+        <summary>
+          Vue d’ensemble
+          <ChevronDown size={15} aria-hidden="true" />
+        </summary>
+        <div className="guide-submenu-content">
+          <p>{response.introduction}</p>
+        </div>
+      </details>
+      {response.steps.map((step, index) => (
+        <details className="guide-submenu" name={group} key={index}>
+          <summary>
+            {step.title}
+            <ChevronDown size={15} aria-hidden="true" />
+          </summary>
+          <div className="guide-submenu-content">
+            <p>{step.detail}</p>
+            {step.exhibitIds.length > 0 && (
+              <button
+                className="text-button"
+                type="button"
+                onClick={() => onShowExhibits(step.exhibitIds)}
+              >
+                <BookOpen size={14} />
+                Voir {step.exhibitIds.join(", ")}
+              </button>
+            )}
+          </div>
+        </details>
+      ))}
+      {response.questions.length > 0 && (
+        <details className="guide-submenu" name={group}>
+          <summary>
+            Questions à se poser
+            <ChevronDown size={15} aria-hidden="true" />
+          </summary>
+          <div className="guide-submenu-content">
+            <ul>
+              {response.questions.map((q) => (
+                <li key={q}>{q}</li>
+              ))}
+            </ul>
+          </div>
+        </details>
+      )}
+      {response.citations.length > 0 && (
+        <details className="guide-submenu" name={group}>
+          <summary>
+            Sources fournies ({response.citations.length})
+            <ChevronDown size={15} aria-hidden="true" />
+          </summary>
+          <div className="guide-submenu-content">
+            {response.citations.map((c) => (
+              <details key={c.id}>
+                <summary>
+                  {c.title} · {c.article}
+                </summary>
+                <p>
+                  {c.source}
+                  {c.version ? " · " + c.version : ""}
+                </p>
+                <blockquote>{c.excerpt}</blockquote>
+                {safeUrl(c.url) && (
+                  <a
+                    href={safeUrl(c.url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Consulter la source
+                  </a>
+                )}
+              </details>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
 export function PreparationGuide({
   caseDetail,
   roleId,
@@ -30,28 +141,19 @@ export function PreparationGuide({
   onAddNotes: (text: string) => void;
   onShowExhibits: (ids: string[]) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<GuideIntent>();
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sendingIntent, setSendingIntent] = useState<GuideIntent>();
   const [error, setError] = useState("");
   const [failed, setFailed] = useState<GuideRequest>();
-  const [turns, setTurns] = useState<
-    { question: string; response: GuideResponse }[]
-  >([]);
+  const [turns, setTurns] = useState<Turn[]>([]);
   const [added, setAdded] = useState<string[]>([]);
-  const [unread, setUnread] = useState(false);
+  const [questionId, setQuestionId] = useState<string>();
   const id = useId();
   const controller = useRef<AbortController | null>(null);
   const flight = useRef(false);
   const mounted = useRef(true);
-  const log = useRef<HTMLDivElement>(null);
-  const nearBottom = useRef(true);
-  function scrollToLatest() {
-    const latest = log.current?.querySelector<HTMLElement>(
-      ".guide-exchange:last-child",
-    );
-    if (log.current && latest) log.current.scrollTop = latest.offsetTop;
-  }
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -59,15 +161,11 @@ export function PreparationGuide({
       controller.current?.abort();
     };
   }, []);
-  useEffect(() => {
-    if (nearBottom.current) {
-      scrollToLatest();
-    } else setUnread(true);
-  }, [turns]);
   async function send(input: GuideRequest) {
     if (flight.current) return;
     flight.current = true;
     setBusy(true);
+    setSendingIntent(input.intent);
     setError("");
     const abort = new AbortController();
     controller.current = abort;
@@ -75,10 +173,18 @@ export function PreparationGuide({
       const response = await askGuide(caseDetail, input, abort.signal);
       if (!mounted.current || abort.signal.aborted) return;
       setTurns((previous) =>
-        [...previous, { question: input.message, response }].slice(-6),
+        [
+          ...previous,
+          { intent: input.intent, question: input.message, response },
+        ].slice(-6),
       );
+      if (input.intent === "question") setQuestionId(response.id);
       setFailed(undefined);
-      setDraft((current) => (current.trim() === input.message ? "" : current));
+      if (input.intent === "question") {
+        setDraft((current) =>
+          current.trim() === input.message ? "" : current,
+        );
+      }
     } catch (err) {
       if (!mounted.current || abort.signal.aborted) return;
       setError(
@@ -89,10 +195,13 @@ export function PreparationGuide({
       setFailed(input);
     } finally {
       flight.current = false;
-      if (mounted.current) setBusy(false);
+      if (mounted.current) {
+        setBusy(false);
+        setSendingIntent(undefined);
+      }
     }
   }
-  function prepare(intent: GuideRequest["intent"], message: string) {
+  function prepare(intent: GuideIntent, message: string) {
     const history = turns
       .flatMap((t) => [
         { role: "student" as const, text: t.question },
@@ -115,271 +224,233 @@ export function PreparationGuide({
       history,
     });
   }
-  const latest = turns.at(-1)?.response;
-  const notes = latest ? guideNotes(latest) : "";
-  const canAdd =
-    !!latest &&
-    !added.includes(latest.id) &&
-    noteLength + notes.length + (noteLength ? 2 : 0) <= 10000;
+  function toggleMenu(menu: (typeof menus)[number]) {
+    if (activeMenu === menu.intent) {
+      setActiveMenu(undefined);
+      return;
+    }
+    setActiveMenu(menu.intent);
+    if (
+      menu.intent !== "question" &&
+      !turns.some((t) => t.intent === menu.intent) &&
+      !busy
+    )
+      prepare(menu.intent, menu.message);
+  }
+  const questions = turns.filter((t) => t.intent === "question");
+  function responseFor(intent: GuideIntent) {
+    if (intent === "question")
+      return (
+        questions.find((t) => t.response.id === questionId)?.response ||
+        questions.at(-1)?.response
+      );
+    return turns.filter((t) => t.intent === intent).at(-1)?.response;
+  }
+  function notesAction(response: GuideResponse, intent: GuideIntent) {
+    const notes = guideNotes(response);
+    const isAdded = added.includes(response.id);
+    const hasRoom = noteLength + notes.length + (noteLength ? 2 : 0) <= 10000;
+    return (
+      <div className="guide-note-action">
+        <button
+          className="button secondary"
+          type="button"
+          disabled={isAdded || !hasRoom}
+          onClick={() => {
+            onAddNotes(notes);
+            setAdded((previous) => [...previous.slice(-5), response.id]);
+          }}
+        >
+          {isAdded ? <Check size={14} /> : <BookOpen size={14} />}{" "}
+          {isAdded
+            ? "Ajouté à mes notes"
+            : intent === "outline"
+              ? "Ajouter ce plan à mes notes"
+              : "Ajouter ces conseils à mes notes"}
+        </button>
+        {!hasRoom && !isAdded && (
+          <small>
+            Le plan dépasse l’espace restant dans vos notes. Libérez de la place
+            avant de l’ajouter.
+          </small>
+        )}
+      </div>
+    );
+  }
   return (
     <section
-      className={"preparation-guide panel " + (open ? "is-open" : "")}
+      className="preparation-guide panel"
       aria-labelledby={id + "-title"}
     >
-      <div className="guide-heading">
+      <header className="guide-heading">
         <span className="guide-symbol" aria-hidden="true">
-          <Sparkles size={21} />
+          <Sparkles size={19} />
         </span>
         <div>
-          <span className="eyebrow">PRÉPARER AVEC MÉTHODE</span>
           <h3 id={id + "-title"}>Votre guide IA</h3>
-        </div>
-        <button
-          className="icon-button"
-          type="button"
-          aria-label={open ? "Réduire le guide" : "Ouvrir le guide"}
-          aria-expanded={open}
-          aria-controls={id + "-body"}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        </button>
-      </div>
-      <p>
-        Comprendre le dossier, examiner les pièces et construire votre
-        plaidoirie, étape par étape.
-      </p>
-      {!open ? (
-        <div id={id + "-body"}>
-          {!serverMode && <Badge>Démo — conseils simulés</Badge>}
-          <button
-            type="button"
-            className="button guide-launch"
-            aria-expanded={false}
-            aria-controls={id + "-body"}
-            onClick={() => setOpen(true)}
-          >
-            Préparer avec le guide
-            <ArrowRight size={16} />
-          </button>
-        </div>
-      ) : (
-        <div id={id + "-body"}>
-          <Badge>
+          <span className="guide-mode">
             {serverMode
               ? "Accompagnement pédagogique"
               : "Démo — conseils simulés"}
-          </Badge>
-          <p className="guide-context">
+          </span>
+        </div>
+      </header>
+      <div className="guide-menus" aria-label="Rubriques du guide">
+        {menus.map((menu) => {
+          const expanded = activeMenu === menu.intent;
+          const response = responseFor(menu.intent);
+          const Icon = menu.icon;
+          const currentError = failed?.intent === menu.intent ? error : "";
+          return (
+            <div
+              className={"guide-menu " + (expanded ? "is-active" : "")}
+              key={menu.intent}
+            >
+              <button
+                className="guide-menu-trigger"
+                id={id + "-trigger-" + menu.intent}
+                type="button"
+                aria-expanded={expanded}
+                aria-controls={id + "-panel-" + menu.intent}
+                disabled={busy && menu.intent !== sendingIntent}
+                onClick={() => toggleMenu(menu)}
+              >
+                <Icon size={17} aria-hidden="true" />
+                <span>{menu.label}</span>
+                <ChevronDown
+                  className="guide-chevron"
+                  size={16}
+                  aria-hidden="true"
+                />
+              </button>
+              {expanded && (
+                <div
+                  id={id + "-panel-" + menu.intent}
+                  className="guide-menu-panel"
+                  role="region"
+                  aria-labelledby={id + "-trigger-" + menu.intent}
+                  tabIndex={0}
+                >
+                  {menu.intent === "question" && (
+                    <form
+                      className="guide-compose"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (draft.trim()) prepare("question", draft);
+                      }}
+                    >
+                      <label htmlFor={id + "-question"}>
+                        Votre question de préparation
+                      </label>
+                      <textarea
+                        id={id + "-question"}
+                        rows={2}
+                        maxLength={1500}
+                        placeholder="Comment organiser mes arguments ?"
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        disabled={busy}
+                      />
+                      <div className="guide-compose-footer">
+                        <small>{draft.length} / 1 500</small>
+                        <button
+                          className="button"
+                          type="submit"
+                          disabled={busy || !draft.trim()}
+                        >
+                          {busy ? "Envoi…" : "Demander au guide"}
+                          <ArrowRight size={14} />
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                  {busy && (
+                    <p className="guide-status" role="status">
+                      Le guide prépare ses conseils…
+                    </p>
+                  )}
+                  {currentError && (
+                    <div className="notice guide-error" role="alert">
+                      <p>{currentError}</p>
+                      <p>Votre question est conservée.</p>
+                      <button
+                        className="button secondary"
+                        type="button"
+                        disabled={busy}
+                        onClick={() => failed && void send(failed)}
+                      >
+                        Réessayer la question
+                      </button>
+                    </div>
+                  )}
+                  {response && (
+                    <>
+                      <Advice
+                        key={response.id}
+                        response={response}
+                        group={id + "-steps-" + response.id}
+                        onShowExhibits={onShowExhibits}
+                      />
+                      {notesAction(response, menu.intent)}
+                      {menu.intent !== "question" && (
+                        <button
+                          className="text-button guide-refresh"
+                          type="button"
+                          disabled={busy}
+                          onClick={() => prepare(menu.intent, menu.message)}
+                        >
+                          <RefreshCw size={12} />
+                          Actualiser les conseils
+                        </button>
+                      )}
+                    </>
+                  )}
+                  {menu.intent === "question" && questions.length > 1 && (
+                    <details className="guide-history">
+                      <summary>
+                        Questions précédentes ({questions.length})
+                      </summary>
+                      {questions.map((t) => (
+                        <button
+                          type="button"
+                          aria-pressed={response?.id === t.response.id}
+                          key={t.response.id}
+                          onClick={() => setQuestionId(t.response.id)}
+                        >
+                          {t.question}
+                        </button>
+                      ))}
+                    </details>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <details className="guide-about">
+        <summary>
+          <Info size={13} aria-hidden="true" />À propos du guide
+        </summary>
+        <div>
+          <p>
             {serverMode
               ? "Le guide reçoit votre question et les échanges de cette page. Vos notes privées ne lui sont pas transmises."
               : "Conseils prédéfinis à partir du dossier, sans IA connectée. Vos questions restent sur cette page."}
           </p>
-          <div
-            className="guide-prompts"
-            aria-label="Commencer avec une question"
-          >
-            {guidePrompts.map((prompt) => (
-              <button
-                className="button secondary"
-                type="button"
-                disabled={busy}
-                key={prompt.intent}
-                onClick={() => prepare(prompt.intent, prompt.message)}
-              >
-                {prompt.label}
-                <ArrowRight size={14} />
-              </button>
-            ))}
-          </div>
-          {turns.length > 0 && (
-            <div
-              className="guide-conversation"
-              role="region"
-              aria-label="Échanges avec le guide"
-              tabIndex={0}
-              ref={log}
-              onScroll={() => {
-                const el = log.current;
-                if (el) {
-                  nearBottom.current =
-                    el.scrollHeight - el.scrollTop - el.clientHeight < 50;
-                  if (nearBottom.current) setUnread(false);
-                }
-              }}
-            >
-              {turns.map(({ question, response }) => (
-                <article className="guide-exchange" key={response.id}>
-                  <p className="guide-question">
-                    <MessageSquare size={15} aria-hidden="true" />
-                    <span>{question}</span>
-                  </p>
-                  <div className="guide-answer">
-                    <p>{response.introduction}</p>
-                    <ol>
-                      {response.steps.map((step, index) => (
-                        <li key={index}>
-                          <strong>{step.title}</strong>
-                          <p>{step.detail}</p>
-                          {step.exhibitIds.length > 0 && (
-                            <button
-                              type="button"
-                              className="text-button"
-                              onClick={() => onShowExhibits(step.exhibitIds)}
-                            >
-                              <BookOpen size={14} />
-                              Voir {step.exhibitIds.join(", ")}
-                            </button>
-                          )}
-                        </li>
-                      ))}
-                    </ol>
-                    {response.questions.length > 0 && (
-                      <div className="guide-reflection">
-                        <strong>À vous de réfléchir</strong>
-                        <ul>
-                          {response.questions.map((q) => (
-                            <li key={q}>{q}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {response.citations.length > 0 && (
-                      <div className="guide-citations">
-                        <strong>Sources fournies</strong>
-                        {response.citations.map((c) => (
-                          <details key={c.id}>
-                            <summary>
-                              {c.title} · {c.article}
-                            </summary>
-                            <p>
-                              {c.source}
-                              {c.version ? " · " + c.version : ""}
-                            </p>
-                            <blockquote>{c.excerpt}</blockquote>
-                            {safeUrl(c.url) && (
-                              <a
-                                href={safeUrl(c.url)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                Consulter la source
-                              </a>
-                            )}
-                          </details>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-          {unread && (
-            <button
-              type="button"
-              className="text-button"
-              onClick={() => {
-                scrollToLatest();
-                nearBottom.current = true;
-                setUnread(false);
-              }}
-            >
-              Nouvelle réponse ↓
-            </button>
-          )}
-          <p className="guide-status" role="status" aria-live="polite">
-            {busy
-              ? "Le guide prépare ses conseils…"
-              : turns.length
-                ? "Réponse disponible."
-                : "Choisissez une question pour commencer."}
-          </p>
-          {error && (
-            <div className="notice guide-error" role="alert">
-              <p>{error}</p>
-              <p>
-                Votre question est conservée. Vous pouvez poursuivre la
-                préparation du dossier.
-              </p>
-              {failed && (
-                <button
-                  className="button secondary"
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void send(failed)}
-                >
-                  Réessayer la question
-                </button>
-              )}
-            </div>
-          )}
-          <form
-            className="guide-compose"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (draft.trim()) prepare("question", draft);
-            }}
-          >
-            <label htmlFor={id + "-question"}>
-              Votre question de préparation
-            </label>
-            <textarea
-              id={id + "-question"}
-              rows={3}
-              maxLength={1500}
-              placeholder="Comment organiser mes arguments dans ce dossier ?"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              disabled={busy}
-            />
-            <div className="guide-compose-footer">
-              <small>{draft.length} / 1 500</small>
-              <button
-                className="button"
-                type="submit"
-                disabled={busy || !draft.trim()}
-              >
-                {busy ? "Envoi…" : "Demander au guide"}
-                <ArrowRight size={15} />
-              </button>
-            </div>
-          </form>
-          {latest && (
-            <div className="guide-note-action">
-              <button
-                className="button secondary"
-                type="button"
-                disabled={!canAdd}
-                onClick={() => {
-                  onAddNotes(notes);
-                  setAdded((current) => [...current.slice(-5), latest.id]);
-                }}
-              >
-                {added.includes(latest.id) ? (
-                  <Check size={15} />
-                ) : (
-                  <BookOpen size={15} />
-                )}{" "}
-                {added.includes(latest.id)
-                  ? "Ajouté à mes notes"
-                  : "Ajouter ce plan à mes notes"}
-              </button>
-              {!canAdd && !added.includes(latest.id) && (
-                <small>
-                  Le plan dépasse l’espace restant dans vos notes. Libérez de la
-                  place avant de l’ajouter.
-                </small>
-              )}
-            </div>
-          )}
-          <p className="guide-footnote">
-            Le guide vous aide à argumenter ; la décision appartient à la cour.
-            N’attribuez à une pièce ou à un texte que ce que son contenu permet
-            d’établir.
+          <p>
+            Le guide aide à construire votre argumentation ; la décision
+            appartient à la cour.
           </p>
         </div>
-      )}
+      </details>
+      <span className="sr-only" aria-live="polite">
+        {busy
+          ? "Le guide prépare une réponse."
+          : turns.length
+            ? "Réponse disponible dans la rubrique sélectionnée."
+            : ""}
+      </span>
     </section>
   );
 }

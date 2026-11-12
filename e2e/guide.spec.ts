@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-test("guide de préparation contextualisé et ajout explicite aux notes", async ({
+test("guide compact avec menus, sous-menus et ajout aux notes", async ({
   page,
 }, testInfo) => {
   const posts: string[] = [];
@@ -9,26 +9,51 @@ test("guide de préparation contextualisé et ajout explicite aux notes", async 
   });
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/app/cases/accident");
+  const guide = page.getByRole("region", { name: "Votre guide IA" });
+  await expect(guide).toBeVisible();
+  expect((await guide.boundingBox())!.height).toBeLessThan(360);
+  await expect(page.locator(".guide-menu.is-active")).toHaveCount(0);
+  await page.locator("h1").click();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({
+    path:
+      "test-results/preparation-guide-compact-" +
+      testInfo.project.name +
+      ".png",
+    fullPage: true,
+  });
   await page.getByRole("tab", { name: "Mes notes" }).click();
   await page.getByLabel("Plan et arguments").fill("Mon raisonnement personnel");
   await page.getByRole("tab", { name: "Faits", exact: true }).click();
-  await page.getByRole("button", { name: "Préparer avec le guide" }).click();
+  await page
+    .getByRole("button", { name: "Par où commencer ?", exact: true })
+    .focus();
+  await page.keyboard.press("Enter");
   await expect(
-    page.getByText("Démo — conseils simulés", { exact: true }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Par où commencer ?" }).click();
+    page.getByRole("button", { name: "Par où commencer ?", exact: true }),
+  ).toHaveAttribute("aria-expanded", "true");
   const conversation = page.getByRole("region", {
     name: "Échanges avec le guide",
   });
-  await expect(
-    conversation.getByText("Comprendre le différend", { exact: true }),
-  ).toBeVisible();
+  await conversation
+    .getByText("Comprendre le différend", { exact: true })
+    .click();
   await expect(
     conversation.getByText(/circonstances de la collision/),
   ).toBeVisible();
+  await conversation
+    .getByText("Faire une grille faits / pièces / limites", { exact: true })
+    .click();
+  await expect(guide.locator(".guide-submenu[open]")).toHaveCount(1);
+  await expect(
+    conversation.getByText(/circonstances de la collision/),
+  ).toBeHidden();
   await page
     .getByRole("button", { name: "Examiner les pièces", exact: true })
     .click();
+  await expect(
+    page.getByRole("button", { name: "Par où commencer ?", exact: true }),
+  ).toHaveAttribute("aria-expanded", "false");
   await expect(
     conversation.getByText("P01 · Constat descriptif", { exact: true }),
   ).toBeVisible();
@@ -38,8 +63,11 @@ test("guide de préparation contextualisé et ajout explicite aux notes", async 
   await page
     .getByRole("button", { name: "Construire mon plan", exact: true })
     .click();
-  const unread = page.getByRole("button", { name: "Nouvelle réponse ↓" });
-  if (await unread.isVisible()) await unread.click();
+  await conversation
+    .getByText("1. Annoncer votre position", { exact: true })
+    .click();
+  await expect(guide.locator(".guide-menu.is-active")).toHaveCount(1);
+  expect((await guide.boundingBox())!.height).toBeLessThan(700);
   await page.locator("h1").click();
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
@@ -67,32 +95,45 @@ test("guide de préparation contextualisé et ajout explicite aux notes", async 
     ),
   ).toBe(true);
 });
-test("guide isolé par dossier et question conservée au changement d’onglet", async ({
+test("question conservée au changement de rubrique et guide isolé par dossier", async ({
   page,
 }) => {
   await page.goto("/app/cases/accident");
-  await page.getByRole("button", { name: "Préparer avec le guide" }).click();
+  await page
+    .getByRole("button", { name: "Poser une question", exact: true })
+    .click();
   await page
     .getByLabel("Votre question de préparation")
-    .fill("Comment préparer ma réponse ?");
+    .fill("Quelle méthode suivre pour préparer ce dossier ?");
+  await page
+    .getByRole("button", { name: "Par où commencer ?", exact: true })
+    .click();
+  await expect(page.getByLabel("Votre question de préparation")).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Poser une question", exact: true })
+    .click();
+  await expect(page.getByLabel("Votre question de préparation")).toHaveValue(
+    "Quelle méthode suivre pour préparer ce dossier ?",
+  );
   await page.getByRole("tab", { name: "Pièces (4)" }).click();
   await expect(page.getByLabel("Votre question de préparation")).toHaveValue(
-    "Comment préparer ma réponse ?",
+    "Quelle méthode suivre pour préparer ce dossier ?",
   );
   await page.getByRole("button", { name: "Demander au guide" }).click();
   await expect(page.getByLabel("Votre question de préparation")).toHaveValue(
     "",
   );
   await page
+    .getByRole("region", { name: "Échanges avec le guide" })
+    .getByText("Faire une grille faits / pièces / limites", { exact: true })
+    .click();
+  await page
     .getByRole("button", { name: "Voir P01, P02", exact: true })
     .click();
   await expect(page.getByRole("tab", { name: "Pièces (4)" })).toBeFocused();
   await expect(page.locator("#exhibit-P01")).toHaveAttribute("open", "");
   await page.goto("/app/cases/limete");
-  await page.getByRole("button", { name: "Préparer avec le guide" }).click();
-  await expect(
-    page.getByRole("region", { name: "Échanges avec le guide" }),
-  ).toHaveCount(0);
+  await expect(page.locator(".guide-menu.is-active")).toHaveCount(0);
   await page
     .getByRole("button", { name: "Examiner les pièces", exact: true })
     .click();
@@ -108,7 +149,6 @@ test("le guide ne dépasse pas la capacité des notes locales", async ({
   await page.goto("/app/cases/accident");
   await page.getByRole("tab", { name: "Mes notes" }).click();
   await page.getByLabel("Plan et arguments").fill("A".repeat(10000));
-  await page.getByRole("button", { name: "Préparer avec le guide" }).click();
   await page
     .getByRole("button", { name: "Construire mon plan", exact: true })
     .click();
