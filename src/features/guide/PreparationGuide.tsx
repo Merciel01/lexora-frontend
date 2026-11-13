@@ -56,6 +56,8 @@ function Advice({
         </summary>
         <div className="guide-submenu-content">
           <p>{response.introduction}</p>
+          {response.engine === "local" && <p>Modèle local · {response.seconds} s · extraits du dossier, sans source de droit validée.</p>}
+          {response.truncated && <p>Réponse limitée en longueur. Vous pouvez poser une question plus ciblée.</p>}
         </div>
       </details>
       {response.steps.map((step, index) => (
@@ -366,7 +368,7 @@ export function PreparationGuide({
                   )}
                   {busy && (
                     <p className="guide-status" role="status">
-                      Le guide prépare ses conseils…
+                      Le guide prépare ses conseils… La génération locale peut prendre jusqu’à deux minutes.
                     </p>
                   )}
                   {currentError && (

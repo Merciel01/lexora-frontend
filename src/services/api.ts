@@ -27,9 +27,10 @@ export async function request<T>(
   path: string,
   schema: z.ZodType<T>,
   options: RequestInit = {},
+  timeoutMs = 20000,
 ): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   const cancel = () => controller.abort();
   options.signal?.addEventListener("abort", cancel, { once: true });
   if (options.signal?.aborted) controller.abort();

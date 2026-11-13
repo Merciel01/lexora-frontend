@@ -145,7 +145,8 @@ export function useRecorder(
   }
   useEffect(() => {
     alive.current = true;
-    const blur = () => stop(true);
+    // A permission prompt may blur the page before capture starts: do not cancel it.
+    const blur = () => { if (recorder.current?.state === 'recording') stop(true); };
     window.addEventListener("blur", blur);
     const hidden = () => {
       if (document.hidden) stop(true);

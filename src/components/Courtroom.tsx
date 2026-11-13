@@ -22,7 +22,7 @@ export default function Courtroom({
   cameraMode?: CourtroomState["cameraMode"];
   gesture?: string;
   emotion?: string;
-  onUnavailable: () => void;
+  onUnavailable: (reason?: string) => void;
   onUseText: () => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
@@ -57,7 +57,7 @@ export default function Courtroom({
   }, [onUnavailable]);
   useEffect(() => {
     // Allow slow first downloads; reset the inactivity timer only on real progress.
-    let timeout = window.setTimeout(() => unavailable.current(), 120000);
+    let timeout = window.setTimeout(() => unavailable.current("Le chargement de la salle n’a pas progressé depuis deux minutes."), 120000);
     let progress = 0;
     const hint = window.setTimeout(() => setSlow(true), 15000);
     const receive = (event: MessageEvent<unknown>) => {
@@ -80,9 +80,10 @@ export default function Courtroom({
       window.clearTimeout(timeout);
       window.clearTimeout(hint);
       if (data.type === "ready") setReady(true);
-      else unavailable.current();
+      else unavailable.current(typeof data.reason === 'string' ? data.reason.slice(0, 300) : undefined);
     };
     window.addEventListener("message", receive);
+    frame.current?.contentWindow?.postMessage({channel: "lexora-courtroom", version: 1, type: "init"}, window.location.origin);
     return () => {
       window.clearTimeout(timeout);
       window.clearTimeout(hint);
@@ -103,6 +104,7 @@ export default function Courtroom({
         className="courtroom-frame"
         title="Salle d’audience 3D Lexora"
         src={`${import.meta.env.BASE_URL}courtroom/index.html?embed=1`}
+        onLoad={() => frame.current?.contentWindow?.postMessage({channel: "lexora-courtroom", version: 1, type: "init"}, window.location.origin)}
         onError={() => unavailable.current()}
         aria-label="Salle d’audience interactive : glisser pour tourner, molette pour zoomer"
       />

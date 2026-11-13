@@ -104,7 +104,7 @@ html = html
   );
 html = html.replace(
   /<!--ENGINE-->[\s\S]*$/,
-  '<script>window.addEventListener("error",()=>{if(new URLSearchParams(location.search).get("embed")==="1")parent.postMessage({channel:"lexora-courtroom",version:1,type:"unavailable"},location.origin);},true);</script><script src="./engine.js"></script><script src="./data.js"></script><script src="./runtime.js"></script><script src="./lexora-bridge.js"></script></html>',
+  '<script src="./lexora-health.js"></script><script src="./engine.js"></script><script src="./data.js"></script><script src="./runtime.js"></script><script src="./lexora-bridge.js"></script></html>',
 );
 html = html.replace(
   "</style>",

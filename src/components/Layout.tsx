@@ -20,6 +20,7 @@ const nav = [
   ["/app/history", "Mes audiences", HistoryIcon],
   ["/app/progress", "Ma progression", TrendingUp],
   ["/app/settings", "Paramètres", Settings],
+  ["/app/local-model", "Modèle local", Scale],
 ] as const;
 export function Badge({ children }: { children: ReactNode }) {
   return <span className="badge">{children}</span>;

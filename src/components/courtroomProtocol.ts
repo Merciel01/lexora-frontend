@@ -17,7 +17,7 @@ export type CourtroomEvent =
       characters: 9;
       sceneVersion: 27;
     }
-  | { channel: "lexora-courtroom"; version: 1; type: "unavailable" }
+  | { channel: "lexora-courtroom"; version: 1; type: "unavailable"; reason?: string }
   | {
       channel: "lexora-courtroom";
       version: 1;

@@ -1,7 +1,7 @@
 /* Same-origin visual adapter only. It does not send commands to Django. */
 (() => {
   if (!LEXORA_EMBED) return;
-  const roles = { president: "president", "assessor-1": "assesseur_01", "assessor-2": "assesseur_02", prosecutor: "ministere_public", opposition: "avocat_adverse", clerk: "greffier", student: "etudiant_avocat" };
+  const roles = { president: "president", "assessor-1": "assesseur_01", "assessor-2": "assesseur_02", prosecutor: "ministere_public", opposition: "avocat_adverse", clerk: "greffier", student: "etudiant_avocat", client_prevenu: "client_prevenu", temoin_01: "temoin_01" };
   let ready = false, pending = null, previous = null;
   const send = (type, extra = {}) => parent.postMessage({ channel: "lexora-courtroom", version: 1, type, ...extra }, location.origin);
   window.lexoraSceneProgress = (loaded, total) => send("progress", { loaded, total });
@@ -10,7 +10,7 @@
     ready = true;
     schedule = null;
     $("followSpeaker").checked = false;
-    renderer.domElement.addEventListener("webglcontextlost", event => { event.preventDefault(); send("unavailable"); });
+    renderer.domElement.addEventListener("webglcontextlost", event => { event.preventDefault(); send("unavailable", {reason: "Le navigateur a perdu le contexte graphique WebGL. Fermez les autres vues 3D puis réessayez."}); });
     if (pending) apply(pending);
     send("ready", { characters: results.loaded.length, sceneVersion: 27 });
   };
@@ -40,6 +40,11 @@
   window.addEventListener("message", event => {
     if (event.source !== parent || event.origin !== location.origin) return;
     const data = event.data;
+    if (data?.channel === "lexora-courtroom" && data.version === 1 && data.type === "init") {
+      if (ready) send("ready", {characters: results.loaded.length, sceneVersion: 27});
+      else if (window.lexoraBootFailed) send("unavailable", {reason: "Le décor ou un personnage n’a pas pu être chargé."});
+      return;
+    }
     if (!data || data.channel !== "lexora-courtroom" || data.version !== 1 || data.type !== "state" || !valid(data.state)) return;
     pending = data.state;
     if (ready) apply(pending);

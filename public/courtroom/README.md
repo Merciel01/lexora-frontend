@@ -1,5 +1,7 @@
 # Salle Lexora — Skillforce v27
 
+Mise à jour : la scène répond aussi à une demande `init` du parent, pour retrouver le signal de disponibilité après un chargement en cache. Les erreurs de ressources non essentielles (image/audio) ne sont plus assimilées à une panne de script. Une perte WebGL est signalée explicitement ; le panneau d'audience offre « Réessayer la salle 3D », qui remonte une nouvelle scène sans quitter le procès. Recette Chrome réussie avec neuf personnages, perte graphique simulée, rechargement et changement de caméra. La panne initiale de la capture utilisateur n'a pas été reproduite spontanément.
+
 Neuf personnages fictifs semi-réalistes, squelettes, actions et morphes faciaux issus du travail Skillforce ; salle, barre commune, mobilier, documents, emblème mural et drapeau RDC tombant sur pied. Les fichiers `assets/*.glb` sont chargés localement, sans CDN. Aucun fichier Blender, donnée de procès, profil navigateur ou secret n’est livré ici.
 
 `index.html?embed=1` est le moteur visuel de `src/components/Courtroom.tsx`. Ce mode ne lance jamais la chorégraphie autonome. Le parent contrôle l’intervenant, la parole indicative, les gestes, l’objection, la qualité et les caméras par messages versionnés de même origine. Le parent vérifie l’origine **et la fenêtre émettrice** ; le moteur vérifie aussi les rôles et valeurs autorisés. Une erreur de chargement ou perte WebGL propose le mode texte.

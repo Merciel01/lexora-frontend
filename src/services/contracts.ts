@@ -9,6 +9,8 @@ export const speakerIds = [
   "opposition",
   "clerk",
   "student",
+  "client_prevenu",
+  "temoin_01",
 ] as const;
 export type SpeakerId = (typeof speakerIds)[number];
 export const speakerLabels: Record<SpeakerId, string> = {
@@ -19,6 +21,8 @@ export const speakerLabels: Record<SpeakerId, string> = {
   opposition: "L’avocat adverse",
   clerk: "Le greffier",
   student: "Vous",
+  client_prevenu: "Le prévenu",
+  temoin_01: "Le témoin",
 };
 export function speakerId(label: string): SpeakerId {
   return speakerIds.find((id) => speakerLabels[id] === label) || "president";
@@ -117,6 +121,7 @@ export const snapshotSchema = z.object({
   seq: z.number().int().nonnegative().default(0),
   audioCodecs: z.array(z.string()).default([]),
   ttsAvailable: z.boolean().default(false),
+  currentAudio: z.object({turnId:z.string(),speaker:z.enum(speakerIds),url:z.string()}).optional(),
   startedAt: z.string(),
   endAt: z.string().optional(),
   websocketUrl: z.string().optional(),
@@ -221,6 +226,9 @@ export const guideRequestSchema = z.object({
   history: z.array(guideMessageSchema).max(12),
 });
 export const guideResponseSchema = z.object({
+  engine: z.enum(["local", "predefined"]).optional(),
+  seconds: z.number().nonnegative().optional(),
+  truncated: z.boolean().optional(),
   id: z.string().min(1).max(100),
   caseId: z.string().min(1).max(100),
   clientMessageId: z.string().min(1).max(100),

@@ -181,6 +181,7 @@ export async function askGuide(
         "/cases/" + encodeURIComponent(caseDetail.id) + "/guide",
         guideResponseSchema,
         { method: "POST", body: JSON.stringify(input), signal },
+        150000,
       )
     : demoGuide(caseDetail, input);
   return validateGuideResponse(result, caseDetail, input.clientMessageId);
