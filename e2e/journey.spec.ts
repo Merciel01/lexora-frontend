@@ -213,6 +213,7 @@ test("capture locale maintenue puis relâchée sans téléversement", async ({
   await page.goto("/app/session/setup");
   await page.getByRole("button", { name: "Entrer dans la salle" }).click();
   await page.getByRole("button", { name: "Écouter la cour" }).click();
+  await page.getByLabel("Utiliser le mode démarrer / arrêter").uncheck();
   const capture = page.getByRole("button", { name: "Maintenir pour parler" });
   await capture.hover();
   await page.mouse.down();
@@ -225,6 +226,9 @@ test("capture locale maintenue puis relâchée sans téléversement", async ({
   expect(uploads).toEqual([]);
   await page.getByRole("button", { name: "Effacer la capture locale" }).click();
   await expect(page.locator("audio")).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByLabel("Utiliser le mode démarrer / arrêter")).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "Maintenir pour parler" })).toBeVisible();
 });
 test("erreur 3D conserve une audience texte utilisable", async ({ page }) => {
   await page.goto("/app/trials/demo");

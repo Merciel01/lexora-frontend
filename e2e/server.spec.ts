@@ -361,14 +361,14 @@ test("menus du guide : requête conservée et réponse réutilisée à la réouv
   });
   await menu.click();
   await expect(
-    page.getByText("Le guide prépare ses conseils…", { exact: true }),
+    page.getByText(/^Le guide prépare ses conseils…/),
   ).toBeVisible();
   await menu.click();
   await expect(menu).toHaveAttribute("aria-expanded", "false");
   await expect(menu).toBeEnabled();
   await menu.click();
   await expect(
-    page.getByText("Le guide prépare ses conseils…", { exact: true }),
+    page.getByText(/^Le guide prépare ses conseils…/),
   ).toBeVisible();
   release();
   await expect(

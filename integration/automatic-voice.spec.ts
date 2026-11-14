@@ -27,6 +27,8 @@ test('ouverture automatique, attente étudiant et vrai micro transcrit localemen
   await expect(page.getByText('CONNECTÉ À DJANGO')).toBeVisible();
   const trialId=page.url().split('/').at(-1)!;
   const state=async()=> (await page.request.get(`/api/trials/${trialId}`)).json();
+  // Exercise toggle capture explicitly, independent of the account's saved preference.
+  await page.getByLabel('Utiliser le mode démarrer / arrêter').check();
   await page.getByRole('button',{name:'Voir la salle 3D'}).click();
   await expect(page.frameLocator('iframe[title="Salle d’audience 3D Lexora"]').locator('canvas')).toBeVisible();
   await expect(page.locator('.courtroom-loading')).toBeHidden({timeout:90000});

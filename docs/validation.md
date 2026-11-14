@@ -90,3 +90,11 @@ Le build livre environ 486 ko de JavaScript principal (150 ko gzip), un adaptate
 La capture de la salle fournie par l’utilisateur est recadrée pour retirer le navigateur, les menus et la transcription, puis encodée en WebP (2 069 × 760, environ 110 ko). Elle remplace l’illustration de l’accueil. Le bandeau présente texte et image côte à côte sur grand écran, puis empilés avec un cadrage central sur mobile.
 
 Build et lint réussis. Vérification Chrome du build à 1440 × 960 et 390 × 844 : image chargée, texte alternatif présent, lien de simulation conservé, aucune erreur JavaScript et aucun débordement horizontal. Captures d’accueil actualisées et examinées. La suite complète d’audience n’a pas été relancée pour ce changement visuel.
+
+## Recette complète — 14 novembre 2026
+
+Après intégration du micro dans la scène et des caméras automatiques : 41 tests navigateur réussis sur ordinateur, mobile et contrat Django simulé ; 48 tests unitaires, types, lint et build réussis. La capture maintenue utilise explicitement son mode et vérifie sa conservation après rechargement. Les assertions du guide reconnaissent son message de génération locale prolongée.
+
+Correction : l’audience utilise désormais la préférence de capture enregistrée, au lieu de forcer le mode bascule. Sans préférence locale existante, le défaut frontend est démarrer/arrêter ; une préférence reçue du compte reste prioritaire.
+
+La recette isolée contre Django réel réussit également : ouverture et faits automatiques, attente au tour étudiant, MediaRecorder alimenté par un extrait synthétique, transcription locale acceptée, réponse de la cour, pause/reprise, réquisitoire, répliques et clôture. Aucun enregistrement personnel utilisé. Cette recette ne valide ni la reconnaissance de toutes les voix réelles ni une synchronisation labiale par phonèmes.

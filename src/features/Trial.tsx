@@ -237,7 +237,7 @@ export function Trial() {
     });
   const prefs = getPreferences();
   const [sound, setSound] = useState(prefs.sound);
-  const [captureMode, setCaptureMode] = useState<"hold" | "toggle">("toggle");
+  const [captureMode, setCaptureMode] = useState<"hold" | "toggle">(prefs.captureMode);
   const [subtitles, setSubtitles] = useState(prefs.subtitles);
   const [textMode, setTextMode] = useState(read("mode", "text") === "text");
   const [camera, setCamera] = useState<"auto" | "wide" | "speaker" | "student">("auto");
