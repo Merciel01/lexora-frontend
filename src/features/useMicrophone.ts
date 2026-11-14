@@ -79,7 +79,7 @@ export function useMicrophone() {
   }
   useEffect(() => {
     mounted.current = true;
-    const blur = () => stop();
+    const blur = () => { if (stream.current) stop(); };
     window.addEventListener("blur", blur);
     return () => {
       mounted.current = false;

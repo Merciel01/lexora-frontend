@@ -870,8 +870,46 @@ details p {
   overflow: hidden;
   margin-bottom: 24px;
 }
-.courtroom-frame { width: 100%; height: 100%; border: 0; display: block; }
-.courtroom-loading { position: absolute; inset: 0; display: grid; place-items: center; padding: 32px; background: var(--navy); color: white; text-align: center; }
+.courtroom-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+.scene-microphone {
+  position: absolute;
+  z-index: 4;
+  bottom: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 28px);
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(16, 31, 48, .94);
+  color: white;
+  box-shadow: 0 3px 14px #0003;
+}
+.scene-microphone .button { flex-shrink: 0; min-height: 48px; }
+.scene-microphone .button:disabled { opacity: .75; }
+.scene-microphone-status { display: grid; gap: 5px; font-size: 13px; }
+.scene-microphone-status meter { width: 100%; min-width: 90px; }
+@media (max-width: 600px) {
+  .scene-microphone { left: 8px; bottom: 8px; max-width: calc(100% - 16px); gap: 8px; padding: 8px; }
+  .scene-microphone .button { padding: 10px; font-size: 12px; }
+  .scene-microphone-status { font-size: 11px; }
+}
+.courtroom-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: var(--navy);
+  color: white;
+  text-align: center;
+}
 .scene-label {
   position: absolute;
   top: 16px;
@@ -885,7 +923,7 @@ details p {
 .scene-label > span:last-child {
   color: #d2dce4;
   font-size: 11px;
-  background: rgba(16, 31, 48, .9);
+  background: rgba(16, 31, 48, 0.9);
   padding: 5px 9px;
   border-radius: 6px;
 }
@@ -1280,6 +1318,14 @@ dialog::backdrop {
 }
 .auth-story .court-art {
   margin: 40px auto;
+}
+.auth-story .auth-scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 30px 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .15);
 }
 .auth-story small {
   color: #afbec9;
@@ -2131,4 +2177,535 @@ summary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+/* Compact preparation menus: one category and one advice step at a time. */
+.preparation-guide.panel {
+  padding: 18px 20px;
+  border: 1px solid #c8a66a70;
+  min-width: 0;
+}
+.guide-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.guide-symbol {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--navy);
+  color: var(--gold);
+}
+.guide-heading h3 {
+  font-size: 17px;
+  margin: 0;
+  line-height: 1.5;
+}
+.guide-mode {
+  display: block;
+  font-size: 10px;
+  color: var(--green);
+  line-height: 1.6;
+}
+.guide-menus {
+  display: grid;
+  gap: 0;
+}
+.guide-menu + .guide-menu {
+  border-top: 1px solid var(--line);
+}
+.guide-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+}
+.guide-menu-trigger > span {
+  flex: 1;
+}
+.guide-menu-trigger > svg:first-child {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.guide-chevron {
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.guide-menu-trigger[aria-expanded="true"] {
+  color: var(--green);
+}
+.guide-menu-trigger[aria-expanded="true"] .guide-chevron {
+  transform: rotate(180deg);
+}
+.guide-menu-panel {
+  max-height: 300px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  border-left: 2px solid var(--gold);
+  padding: 0 10px 10px 12px;
+  margin: 0 0 10px 5px;
+  overflow-wrap: anywhere;
+}
+.guide-menu-panel:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.guide-submenu {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 0;
+  margin: 0;
+}
+.guide-submenu > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  list-style: none;
+  padding: 9px 0;
+  min-height: 40px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.guide-submenu > summary::-webkit-details-marker {
+  display: none;
+}
+.guide-submenu > summary > svg {
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.guide-submenu[open] > summary > svg {
+  transform: rotate(180deg);
+}
+.guide-submenu[open] > summary {
+  color: var(--green);
+}
+.reader-aside .guide-submenu-content p {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--ink);
+  margin: 3px 0 10px;
+}
+.guide-submenu-content ul {
+  font-size: 14px;
+  line-height: 1.8;
+  padding-left: 17px;
+  margin: 5px 0 12px;
+}
+.guide-submenu-content li + li {
+  margin-top: 7px;
+}
+.guide-submenu-content .text-button {
+  color: var(--green);
+  padding: 4px 0;
+  text-align: left;
+  justify-content: flex-start;
+  font-size: 12px;
+}
+.guide-submenu-content blockquote {
+  font-size: 14px;
+}
+.guide-submenu-content a {
+  font-size: 13px;
+  color: var(--green);
+  text-decoration: underline;
+}
+.guide-note-action {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+.guide-note-action .button {
+  min-height: 40px;
+  white-space: normal;
+  font-size: 11px;
+  padding: 9px 10px;
+  gap: 7px;
+}
+.guide-note-action small {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.guide-refresh.text-button {
+  min-height: 36px;
+  font-size: 10px;
+  padding: 6px 0;
+  color: var(--muted);
+}
+.guide-compose {
+  margin: 6px 0 12px;
+}
+.guide-compose label {
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.guide-compose textarea {
+  min-height: 78px;
+  font-size: 14px;
+  padding: 10px 12px;
+}
+.guide-compose-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+.guide-compose-footer small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.guide-compose-footer .button {
+  font-size: 11px;
+  min-height: 40px;
+  padding: 9px 10px;
+  gap: 7px;
+}
+.guide-status {
+  font-size: 12px !important;
+  margin: 12px 0;
+  color: var(--green);
+}
+.guide-error {
+  padding: 10px;
+  margin: 10px 0;
+}
+.reader-aside .guide-error p {
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.guide-error .button {
+  font-size: 11px;
+  margin: 0;
+  padding: 9px;
+  min-height: 40px;
+}
+.guide-about {
+  border: 0;
+  border-top: 1px solid var(--line);
+  padding: 0;
+  margin-top: 8px;
+}
+.guide-about > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  list-style: none;
+  font-size: 10px;
+  color: var(--muted);
+  min-height: 34px;
+  padding: 7px 0;
+  font-weight: 400;
+}
+.guide-about > summary::-webkit-details-marker {
+  display: none;
+}
+.reader-aside .guide-about p {
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 6px 0;
+}
+.guide-about > div {
+  max-height: 140px;
+  overflow: auto;
+}
+.guide-history {
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+}
+.guide-history > summary {
+  font-size: 11px;
+  min-height: 36px;
+}
+.guide-history > button {
+  display: block;
+  width: 100%;
+  padding: 10px 8px;
+  min-height: 40px;
+  text-align: left;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12px;
+  border-radius: 6px;
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+.guide-history > button[aria-pressed="true"] {
+  color: var(--green);
+  font-weight: 700;
+}
+.reader-aside .reader-accordion.panel {
+  padding: 0;
+  border: 1px solid var(--line);
+}
+.reader-accordion > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 14px 18px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.reader-accordion > summary::-webkit-details-marker {
+  display: none;
+}
+.reader-accordion > summary > span {
+  flex: 1;
+}
+.reader-accordion > summary > svg:first-child {
+  color: var(--muted);
+}
+.reader-accordion > summary > svg:last-child {
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.reader-accordion[open] > summary > svg:last-child {
+  transform: rotate(180deg);
+}
+.reader-accordion-body {
+  padding: 0 18px 14px;
+}
+.reader-aside .reader-accordion-body p {
+  font-size: 13px;
+  margin: 0 0 10px;
+  line-height: 1.8;
+}
+.reader-accordion-body h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.reader-exhibit-link {
+  display: block;
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 0;
+  background: transparent;
+  text-align: left;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.7;
+  border-bottom: 1px solid var(--line);
+}
+.reader-exhibit-link:last-child {
+  border-bottom: 0;
+}
+.reader-exhibit-link:hover {
+  color: var(--green);
+}
+@media (max-width: 767px) {
+  .preparation-guide.panel {
+    padding: 17px 20px;
+  }
+  .guide-menu-trigger {
+    font-size: 14px;
+    min-height: 46px;
+  }
+  .guide-submenu > summary {
+    font-size: 13px;
+    min-height: 44px;
+  }
+  .guide-note-action .button,
+  .guide-compose-footer .button {
+    min-height: 44px;
+    font-size: 12px;
+  }
+  .guide-menu-panel {
+    max-height: min(320px, 50dvh);
+  }
+  .guide-heading h3 {
+    font-size: 18px;
+  }
+}
+@media print {
+  .preparation-guide {
+    display: none !important;
+  }
+}
+@media (max-width: 900px) and (min-width: 768px) {
+  .reader-aside > .preparation-guide {
+    grid-column: 1/-1;
+  }
+}
+.reader-aside .guide-submenu-content p {
+  font-size: 16px;
+}
+@media (max-width: 767px) {
+  .guide-about > summary,
+  .guide-history > summary,
+  .guide-refresh.text-button {
+    min-height: 44px;
+  }
+}
+
+/* Audience: keep the room visible and group secondary controls. */
+.courtroom-toolbar {
+  align-items: start;
+  gap: 12px;
+}
+.courtroom-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.courtroom-toolbar select {
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 30px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+}
+.courtroom-options {
+  padding: 0;
+  min-width: 180px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+}
+.courtroom-options > summary {
+  padding: 12px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.courtroom-options > div {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+.courtroom-options .text-button {
+  min-height: 44px;
+  justify-content: start;
+}
+.court-scene {
+  margin-bottom: 12px;
+}
+.scene-caption {
+  position: relative;
+  inset: auto;
+  max-height: none;
+  overflow: visible;
+  margin: 0 0 24px;
+  border: 1px solid var(--line);
+  padding: 14px 18px;
+}
+.scene-caption p {
+  font-weight: 500;
+}
+.courtroom-loading {
+  z-index: 3;
+}
+.courtroom-loading > div {
+  width: min(100%, 370px);
+}
+.courtroom-loading strong {
+  font-size: 20px;
+}
+.courtroom-loading p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #d2dce4;
+}
+.courtroom-loading progress {
+  display: block;
+  width: 100%;
+  height: 6px;
+  margin: 16px 0;
+  accent-color: var(--gold);
+}
+@media (max-width: 767px) {
+  .courtroom-toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .courtroom-toolbar > label {
+    justify-content: space-between;
+  }
+  .courtroom-toolbar select {
+    min-width: 160px;
+  }
+  .courtroom-options {
+    width: 100%;
+  }
+  .courtroom-options > div > label {
+    justify-content: space-between;
+  }
+  .court-scene {
+    height: clamp(340px, 55svh, 460px);
+  }
+  .scene-caption {
+    inset: auto;
+    padding: 12px 14px;
+    max-height: none;
+  }
+}
+
+/* Homepage courtroom preview. */
+.hero--courtroom {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr);
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+}
+.hero--courtroom > div {
+  padding: 30px 32px;
+}
+.home-courtroom {
+  margin: 0;
+  min-width: 0;
+  position: relative;
+}
+.home-courtroom img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 55% center;
+}
+@media (max-width: 1100px) {
+  .hero--courtroom {
+    grid-template-columns: 1fr;
+  }
+  .hero--courtroom > div {
+    padding: 26px;
+  }
+  .home-courtroom {
+    aspect-ratio: 2.5;
+  }
+}
+@media (max-width: 767px) {
+  .hero--courtroom {
+    padding: 0;
+  }
+  .hero--courtroom > div {
+    padding: 25px;
+  }
+  .home-courtroom {
+    aspect-ratio: 16 / 9;
+  }
 }

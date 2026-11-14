@@ -358,6 +358,59 @@
         }
       }
     },
+    "/cases/{id}/guide": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Réponse selon le contrat proposé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/guideResponseSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expirée"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        },
+        "summary": "Guide pédagogique contextualisé — proposition à valider",
+        "parameters": [
+          {
+            "name": "X-CSRFToken",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/guideRequestSchema"
+              }
+            }
+          }
+        }
+      }
+    },
     "/trials": {
       "get": {
         "responses": {
@@ -1062,7 +1115,9 @@
                       "prosecutor",
                       "opposition",
                       "clerk",
-                      "student"
+                      "student",
+                      "client_prevenu",
+                      "temoin_01"
                     ]
                   },
                   "seq": {
@@ -1081,6 +1136,37 @@
                   "ttsAvailable": {
                     "default": false,
                     "type": "boolean"
+                  },
+                  "currentAudio": {
+                    "type": "object",
+                    "properties": {
+                      "turnId": {
+                        "type": "string"
+                      },
+                      "speaker": {
+                        "type": "string",
+                        "enum": [
+                          "president",
+                          "assessor-1",
+                          "assessor-2",
+                          "prosecutor",
+                          "opposition",
+                          "clerk",
+                          "student",
+                          "client_prevenu",
+                          "temoin_01"
+                        ]
+                      },
+                      "url": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "turnId",
+                      "speaker",
+                      "url"
+                    ],
+                    "additionalProperties": false
                   },
                   "startedAt": {
                     "type": "string"
@@ -1148,7 +1234,9 @@
                   "prosecutor",
                   "opposition",
                   "clerk",
-                  "student"
+                  "student",
+                  "client_prevenu",
+                  "temoin_01"
                 ]
               },
               "text": {
@@ -1421,7 +1509,9 @@
                   "prosecutor",
                   "opposition",
                   "clerk",
-                  "student"
+                  "student",
+                  "client_prevenu",
+                  "temoin_01"
                 ]
               }
             },
@@ -1464,6 +1554,230 @@
             "additionalProperties": false
           }
         ]
+      },
+      "guideIntentSchema": {
+        "type": "string",
+        "enum": [
+          "method",
+          "evidence",
+          "outline",
+          "question"
+        ]
+      },
+      "guideMessageSchema": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "student",
+              "guide"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 6000
+          }
+        },
+        "required": [
+          "role",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "guideRequestSchema": {
+        "type": "object",
+        "properties": {
+          "clientMessageId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "roleId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "method",
+              "evidence",
+              "outline",
+              "question"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1500
+          },
+          "history": {
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "student",
+                    "guide"
+                  ]
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 6000
+                }
+              },
+              "required": [
+                "role",
+                "text"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "clientMessageId",
+          "roleId",
+          "intent",
+          "message",
+          "history"
+        ],
+        "additionalProperties": false
+      },
+      "guideResponseSchema": {
+        "type": "object",
+        "properties": {
+          "engine": {
+            "type": "string",
+            "enum": [
+              "local",
+              "predefined"
+            ]
+          },
+          "seconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "caseId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "clientMessageId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "introduction": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "steps": {
+            "minItems": 1,
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 150
+                },
+                "detail": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1500
+                },
+                "exhibitIds": {
+                  "maxItems": 20,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 100
+                  }
+                }
+              },
+              "required": [
+                "title",
+                "detail",
+                "exhibitIds"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "questions": {
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "citations": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "article": {
+                  "type": "string"
+                },
+                "excerpt": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "source",
+                "title",
+                "article",
+                "excerpt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "caseId",
+          "clientMessageId",
+          "introduction",
+          "steps",
+          "questions",
+          "citations"
+        ],
+        "additionalProperties": false
       },
       "historySchema": {
         "type": "object",
@@ -1730,7 +2044,9 @@
               "prosecutor",
               "opposition",
               "clerk",
-              "student"
+              "student",
+              "client_prevenu",
+              "temoin_01"
             ]
           },
           "seq": {
@@ -1749,6 +2065,37 @@
           "ttsAvailable": {
             "default": false,
             "type": "boolean"
+          },
+          "currentAudio": {
+            "type": "object",
+            "properties": {
+              "turnId": {
+                "type": "string"
+              },
+              "speaker": {
+                "type": "string",
+                "enum": [
+                  "president",
+                  "assessor-1",
+                  "assessor-2",
+                  "prosecutor",
+                  "opposition",
+                  "clerk",
+                  "student",
+                  "client_prevenu",
+                  "temoin_01"
+                ]
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "turnId",
+              "speaker",
+              "url"
+            ],
+            "additionalProperties": false
           },
           "startedAt": {
             "type": "string"

@@ -1,22 +1,42 @@
 /* Same-origin visual adapter only. It does not send commands to Django. */
 (() => {
   if (!LEXORA_EMBED) return;
-  const roles = { president: "president", "assessor-1": "assesseur_01", "assessor-2": "assesseur_02", prosecutor: "ministere_public", opposition: "avocat_adverse", clerk: "greffier", student: "etudiant_avocat" };
+  const roles = { president: "president", "assessor-1": "assesseur_01", "assessor-2": "assesseur_02", prosecutor: "ministere_public", opposition: "avocat_adverse", clerk: "greffier", student: "etudiant_avocat", client_prevenu: "client_prevenu", temoin_01: "temoin_01" };
   let ready = false, pending = null, previous = null;
+  let cameraShot = 0, lastCameraShot = 0, manualCameraUntil = 0;
+  function autoCamera(state, reset = false) {
+    if (!ready || document.hidden || state.cameraMode !== "auto") return;
+    if (state.reduced) { if (reset) chooseView("general"); return; }
+    if (Date.now() < manualCameraUntil) return;
+    const id = roles[state.activeSpeaker];
+    const shots = ["general", id === "etudiant_avocat" ? "student" : id, "student"];
+    cameraShot = reset ? (state.speaking ? 1 : 0) : (cameraShot + 1) % shots.length;
+    chooseView(shots[cameraShot]);
+    lastCameraShot = Date.now();
+  }
+  orbit.addEventListener("start", () => { manualCameraUntil = Date.now() + 20000; });
+  const cameraDirector = setInterval(() => {
+    if (pending && Date.now() - lastCameraShot >= 12000) autoCamera(pending);
+  }, 1000);
+  window.addEventListener("pagehide", () => clearInterval(cameraDirector), { once: true });
   const send = (type, extra = {}) => parent.postMessage({ channel: "lexora-courtroom", version: 1, type, ...extra }, location.origin);
+  window.lexoraSceneProgress = (loaded, total) => send("progress", { loaded, total });
   window.lexoraSceneUnavailable = () => send("unavailable");
   window.lexoraSceneReady = () => {
     ready = true;
     schedule = null;
     $("followSpeaker").checked = false;
-    renderer.domElement.addEventListener("webglcontextlost", event => { event.preventDefault(); send("unavailable"); });
+    renderer.domElement.addEventListener("webglcontextlost", event => { event.preventDefault(); send("unavailable", {reason: "Le navigateur a perdu le contexte graphique WebGL. Fermez les autres vues 3D puis réessayez."}); });
     if (pending) apply(pending);
     send("ready", { characters: results.loaded.length, sceneVersion: 27 });
   };
   function valid(state) {
-    return state && typeof state === "object" && Object.hasOwn(roles, state.activeSpeaker) && typeof state.speaking === "boolean" && typeof state.objection === "boolean" && typeof state.reduced === "boolean" && ["auto", "low", "high"].includes(state.quality) && ["wide", "speaker"].includes(state.cameraMode) && typeof state.gesture === "string" && state.gesture.length < 80 && typeof state.emotion === "string" && state.emotion.length < 80;
+    if (state?.mouthShape !== undefined && (typeof state.mouthShape !== "string" || !/^[A-HX]$/.test(state.mouthShape))) return false;
+    if (state?.mouthLevel !== undefined && (!Number.isFinite(state.mouthLevel) || state.mouthLevel < 0 || state.mouthLevel > 1)) return false;
+    return state && typeof state === "object" && Object.hasOwn(roles, state.activeSpeaker) && typeof state.speaking === "boolean" && typeof state.objection === "boolean" && typeof state.reduced === "boolean" && ["auto", "low", "high"].includes(state.quality) && ["auto", "wide", "speaker", "student"].includes(state.cameraMode) && typeof state.gesture === "string" && state.gesture.length < 80 && typeof state.emotion === "string" && state.emotion.length < 80;
   }
   function apply(state) {
+    window.lexoraMouth = state.mouthLevel === undefined ? null : {level: state.speaking ? state.mouthLevel : 0, shape: state.speaking ? state.mouthShape : "X", updated: performance.now()};
     const id = roles[state.activeSpeaker], actor = actors[id];
     schedule = null;
     $("reduceMotion").checked = state.reduced;
@@ -33,12 +53,19 @@
       if (state.speaking) { speakerId = id; takeFloor(id, mode, null, variant); }
       else { speakerId = id; quiet(actor); }
     }
-    if (!previous || previous.cameraMode !== state.cameraMode || (state.cameraMode === "speaker" && previous.activeSpeaker !== state.activeSpeaker)) chooseView(state.cameraMode === "wide" ? "general" : id);
+    if (state.cameraMode === "auto") {
+      if (!previous || previous.cameraMode !== state.cameraMode || previous.activeSpeaker !== state.activeSpeaker || previous.reduced !== state.reduced) autoCamera(state, true);
+    } else if (!previous || previous.cameraMode !== state.cameraMode || (state.cameraMode === "speaker" && previous.activeSpeaker !== state.activeSpeaker)) chooseView(state.cameraMode === "wide" ? "general" : state.cameraMode === "student" ? "student" : id);
     previous = { ...state };
   }
   window.addEventListener("message", event => {
     if (event.source !== parent || event.origin !== location.origin) return;
     const data = event.data;
+    if (data?.channel === "lexora-courtroom" && data.version === 1 && data.type === "init") {
+      if (ready) send("ready", {characters: results.loaded.length, sceneVersion: 27});
+      else if (window.lexoraBootFailed) send("unavailable", {reason: "Le décor ou un personnage n’a pas pu être chargé."});
+      return;
+    }
     if (!data || data.channel !== "lexora-courtroom" || data.version !== 1 || data.type !== "state" || !valid(data.state)) return;
     pending = data.state;
     if (ready) apply(pending);

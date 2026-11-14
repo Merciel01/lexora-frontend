@@ -1,3 +1,4 @@
+import { followAudioMouth, parseMouthCues, mouthShapeAt, type MouthShape } from "./mouth";
 export type QueueItem = {
   id: string;
   turnId: string;
@@ -138,28 +139,59 @@ export function remoteAudioItem(
   sentenceIndex: number,
   url: string,
   onStart?: () => void,
+  onLevel?: (level: number) => void,
+  onShape?: (shape: MouthShape | undefined) => void,
 ): QueueItem {
   let audio: HTMLAudioElement | undefined;
   let settle: (() => void) | undefined;
+  let stopMeter: (() => void) | undefined;
+  let controller: AbortController | undefined;
+  let cancelled = false;
+  let shapeTimer: ReturnType<typeof setInterval> | undefined;
+  const clearMouth = () => { stopMeter?.(); clearInterval(shapeTimer); onShape?.(undefined); };
   return {
     id,
     turnId,
     sentenceIndex,
-    play: () =>
-      new Promise<void>((resolve, reject) => {
+    play: async () => {
+      cancelled = false;
+      controller = new AbortController();
+      let cues: ReturnType<typeof parseMouthCues> = [];
+      if (onShape) {
+        const timeout = setTimeout(() => controller?.abort(), 16000);
+        try {
+          const metadata = new URL(url, location.href);
+          metadata.searchParams.set("mouth", "1");
+          const response = await fetch(metadata, {signal: controller.signal, credentials:"same-origin"});
+          if (response.ok) cues = parseMouthCues((await response.json()).cues);
+        } catch { /* Optional analysis must not prevent voice playback. */ }
+        finally { clearTimeout(timeout); }
+      }
+      // Cancellation during analysis must not start an orphaned voice.
+      if (controller.signal.aborted && cancelled) return;
+      return new Promise<void>((resolve, reject) => {
         audio = new Audio(url);
+        if (onLevel) stopMeter = followAudioMouth(audio, onLevel);
+        if (cues.length) shapeTimer = setInterval(() => onShape?.(audio?.paused || audio?.ended ? "X" : mouthShapeAt(cues, audio?.currentTime || 0)), 40);
         settle = resolve;
         audio.onended = () => {
+          clearMouth();
           audio?.removeAttribute("src");
           resolve();
         };
-        audio.onerror = () =>
+        audio.onerror = () => {
+          clearMouth();
           reject(new Error("Le son de cette phrase est indisponible."));
+        };
         audio.onplaying = () => onStart?.();
-        void audio.play().catch(reject);
-      }),
+        void audio.play().catch(error => { clearMouth(); reject(error); });
+      });
+    },
     stop: () => {
+      cancelled = true;
+      controller?.abort();
       audio?.pause();
+      clearMouth();
       if (audio) {
         audio.removeAttribute("src");
         audio.load();

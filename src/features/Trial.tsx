@@ -37,6 +37,7 @@ import { stage, stageLabels, displayedTime } from "./trial/state";
 import { Heading, Action, Badge } from "../components/Layout";
 import { Modal } from "../components/Modal";
 import { ExhibitViewer } from "../components/ExhibitViewer";
+import { MicrophoneControl } from "../components/MicrophoneControl";
 const Courtroom = lazy(() => import("../components/Courtroom"));
 export function Setup() {
   const mic = useMicrophone();
@@ -165,8 +166,9 @@ export function Setup() {
             accessible pendant tout le procès.
           </p>
           <p>
-            Qualité 3D : {getPreferences().quality} · réglable dans vos
-            préférences
+            La salle 3D se charge à la demande (environ 38 Mo au premier accès).
+            Pour une connexion lente, commencez en mode texte ; vous pourrez
+            ouvrir la salle ensuite.
           </p>
         </section>
       </div>
@@ -218,6 +220,13 @@ class SceneBoundary extends Component<
 export function Trial() {
   const [audioError, setAudioError] = useState("");
   const [playing, setPlaying] = useState(false);
+  const [mouthLevel, setMouthLevel] = useState(0);
+  const [mouthShape, setMouthShape] = useState<string>();
+  const [audioBusy, setAudioBusy] = useState(false);
+  const [automatic, setAutomatic] = useState(false);
+  const [directorStarted, setDirectorStarted] = useState(false);
+  const [pageVisible, setPageVisible] = useState(!document.hidden);
+  const remoteTurns = useRef(new Set<string>());
   const [turnSpeaking, setTurnSpeaking] = useState(false);
   const [playbackDelay, setPlaybackDelay] = useState<number>();
   const queue = useRef<PlaybackQueue | null>(null);
@@ -229,15 +238,18 @@ export function Trial() {
       );
     });
   const prefs = getPreferences();
-  const [sound, setSound] = useState(prefs.sound && prefs.localVoice);
+  const [sound, setSound] = useState(prefs.sound);
+  const [captureMode, setCaptureMode] = useState<"hold" | "toggle">(prefs.captureMode);
   const [subtitles, setSubtitles] = useState(prefs.subtitles);
   const [textMode, setTextMode] = useState(read("mode", "text") === "text");
-  const [camera, setCamera] = useState<"wide" | "speaker">("wide");
+  const [camera, setCamera] = useState<"auto" | "wide" | "speaker" | "student">("auto");
+  const [sceneQuality, setSceneQuality] = useState(prefs.quality);
   const [pieceOpen, setPieceOpen] = useState(false);
   const [piece, setPiece] = useState("P01");
   const [quit, setQuit] = useState(false);
   const [unread, setUnread] = useState(false);
   const [sceneError, setSceneError] = useState(false);
+  const [sceneReason, setSceneReason] = useState("");
   const [caseDetail, setCaseDetail] = useState<CaseDetail>();
   const [draft, setDraft] = useState("");
   const [localAudio, setLocalAudio] = useState("");
@@ -261,6 +273,9 @@ export function Trial() {
       setEmotion(event.emotion || "neutral");
     }
     if (event.type === "audio" && soundRef.current) {
+      const audioId = `${event.turnId}:${event.sentenceIndex}`;
+      if (remoteTurns.current.has(audioId)) return;
+      remoteTurns.current.add(audioId);
       const url = safeUrl(event.url, false);
       if (!url) {
         setAudioError("Source audio non autorisée.");
@@ -276,13 +291,16 @@ export function Trial() {
           setPlaybackDelay(performance.now() - received);
           setPlaying(true);
         },
+        level => { if (live.current) setMouthLevel(level); },
+        shape => { if (live.current) setMouthShape(shape); },
       );
       const play = item.play;
       item.play = async () => {
+        if (live.current) setAudioBusy(true);
         try {
           await play();
         } finally {
-          if (live.current) setPlaying(false);
+          if (live.current) { setPlaying(false); setAudioBusy(false); }
         }
       };
       queue.current?.enqueue(item);
@@ -297,6 +315,26 @@ export function Trial() {
     },
     serverMode ? s?.audioCodecs : undefined,
   );
+  useEffect(() => {
+    const visibility = () => setPageVisible(!document.hidden);
+    document.addEventListener('visibilitychange', visibility);
+    return () => document.removeEventListener('visibilitychange', visibility);
+  }, []);
+  useEffect(() => {
+    if (!serverMode || !sound || !s?.currentAudio) return;
+    receive({type: "audio", eventId: "resume:" + s.currentAudio.turnId, seq: s.seq,
+      ...s.currentAudio, sentenceIndex: 0});
+  }, [s?.currentAudio?.turnId, sound]);
+  // Only court-only stages advance. Student stages always wait for the student's choice.
+  useEffect(() => {
+    if (!s || !automatic || !connected || trial.busy || recorder.recording || audioBusy || audioError || s.finished ||
+        !s.allowedActions.includes("continue") || (s.allowedActions.includes("user_text") && s.step !== 3) || document.hidden) return;
+    const timer = setTimeout(() => {
+      if (queue.current?.size || document.hidden) return;
+      void trial.send({type: "continue"});
+    }, sound ? 1000 : Math.max(2500, Math.min(20000, (s.entries.at(-1)?.text.length || 0) * 45)));
+    return () => clearTimeout(timer);
+  }, [automatic, connected, trial.busy, recorder.recording, audioBusy, audioError, sound, pageVisible, s?.step, s?.entries.at(-1)?.id]);
   const navigate = useNavigate();
   useEffect(() => {
     live.current = true;
@@ -379,6 +417,8 @@ export function Trial() {
     if (!sound) {
       queue.current?.clear();
       setPlaying(false);
+      setAudioBusy(false);
+      remoteTurns.current.clear();
     }
   }, [sound]);
   if (!s)
@@ -410,6 +450,9 @@ export function Trial() {
     s.allowedActions.includes("user_audio") &&
     connected &&
     !trial.busy &&
+    !audioBusy &&
+    !playing &&
+    !(automatic && s.step === 3) &&
     !s.finished &&
     (!serverMode || s.audioCodecs.length > 0);
   const currentStage = stage(
@@ -441,6 +484,8 @@ export function Trial() {
       localVoice: !serverMode ? next : getPreferences().localVoice,
     });
   }
+  const microphoneControl = <MicrophoneControl recording={recorder.recording} allowed={voiceAllowed}
+    mode={captureMode} start={recorder.start} stop={recorder.stop} />;
   return (
     <>
       <Heading
@@ -459,7 +504,13 @@ export function Trial() {
               : "TRANSPORT DÉMO LOCAL"
             : "CONNEXION INTERROMPUE"}
         </Badge>
-        <button className="text-button" onClick={() => setTextMode((v) => !v)}>
+        <button
+          className="text-button"
+          onClick={() => {
+            if (textMode) setSceneError(false);
+            setTextMode((v) => !v);
+          }}
+        >
           {textMode ? <Scale size={16} /> : <MessageSquare size={16} />}{" "}
           {textMode ? "Voir la salle 3D" : "Passer en mode texte"}
         </button>
@@ -500,26 +551,61 @@ export function Trial() {
       )}
       {!textMode && (
         <>
-          <div className="scene-controls">
-            <a className="text-button" href={`${import.meta.env.BASE_URL}courtroom/index.html`} target="_blank" rel="noopener noreferrer">Explorer la salle 3D</a>
-            <button
-              className="text-button"
-              onClick={() =>
-                setCamera((c) => (c === "wide" ? "speaker" : "wide"))
-              }
-            >
-              Caméra : {camera === "wide" ? "vue générale" : "intervenant"}
-            </button>
-            <button
-              className="text-button"
-              aria-pressed={subtitles}
-              onClick={() => {
-                setSubtitles((v) => !v);
-                savePreferences({ ...getPreferences(), subtitles: !subtitles });
-              }}
-            >
-              Sous-titres {subtitles ? "activés" : "désactivés"}
-            </button>
+          <div className="scene-controls courtroom-toolbar">
+            <label>
+              Point de vue
+              <select
+                value={camera}
+                onChange={(e) => setCamera(e.target.value as typeof camera)}
+              >
+                <option value="auto">Caméra automatique</option>
+                <option value="wide">Vue générale</option>
+                <option value="speaker">Intervenant</option>
+                <option value="student">Ma place</option>
+              </select>
+            </label>
+            <details className="courtroom-options">
+              <summary>Options de la salle</summary>
+              <div>
+                <label>
+                  Qualité de la salle
+                  <select
+                    value={sceneQuality}
+                    onChange={(e) => {
+                      const quality = e.target.value as typeof sceneQuality;
+                      setSceneQuality(quality);
+                      savePreferences({ ...getPreferences(), quality });
+                    }}
+                  >
+                    <option value="auto">Automatique</option>
+                    <option value="low">Économique</option>
+                    <option value="high">Détaillée</option>
+                  </select>
+                </label>
+                <button
+                  className="text-button"
+                  aria-pressed={subtitles}
+                  onClick={() => {
+                    setSubtitles((v) => !v);
+                    savePreferences({
+                      ...getPreferences(),
+                      subtitles: !subtitles,
+                    });
+                  }}
+                >
+                  Sous-titres {subtitles ? "activés" : "désactivés"}
+                </button>
+                <a
+                  className="text-button"
+                  href={`${import.meta.env.BASE_URL}courtroom/index.html`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Explorer la salle 3D{" "}
+                  <span className="sr-only">(nouvel onglet)</span>
+                </a>
+              </div>
+            </details>
           </div>
           <div className="court-scene">
             <div className="scene-label">
@@ -529,6 +615,8 @@ export function Trial() {
             {sceneError ? (
               <div className="scene-fallback">
                 <p>La scène 3D n’est pas disponible.</p>
+                {sceneReason && <p>{sceneReason}</p>}
+                <button className="button" onClick={() => { setSceneReason(""); setSceneError(false); }}>Réessayer la salle 3D</button>
                 <button
                   className="button secondary"
                   onClick={() => setTextMode(true)}
@@ -546,27 +634,40 @@ export function Trial() {
                   }
                 >
                   <Courtroom
-                    activeSpeaker={s.activeSpeaker}
-                    speaking={playing || turnSpeaking}
+                    activeSpeaker={recorder.recording ? "student" : s.activeSpeaker}
+                    speaking={playing || turnSpeaking || recorder.recording}
+                    mouthLevel={serverMode ? (playing ? mouthLevel : 0) : undefined}
+                    mouthShape={playing ? mouthShape : undefined}
                     objection={s.objection}
                     reduced={reduced}
-                    quality={prefs.quality}
-                    cameraMode={camera}
+                    quality={sceneQuality}
+                    cameraMode={camera === "auto" && directorStarted && !automatic ? "wide" : camera}
                     gesture={gesture}
                     emotion={emotion}
-                    onUnavailable={() => setSceneError(true)}
+                    onUnavailable={(reason) => { setSceneReason(reason || "Le navigateur n’a pas pu conserver la scène. Réessayez ; le mode texte reste disponible."); setSceneError(true); }}
+                    onUseText={() => setTextMode(true)}
                   />
                 </Suspense>
               </SceneBoundary>
             )}
             {s.objection && <strong className="objection">OBJECTION</strong>}
-            {subtitles && (
-              <div className="scene-caption">
-                <span>{s.entries.at(-1)?.speaker}</span>
-                <p>{s.entries.at(-1)?.text}</p>
+            <div className="scene-microphone" role="group" aria-label="Microphone dans la scène">
+              {microphoneControl}
+              <div className="scene-microphone-status" aria-live="polite">
+                <span>{recorder.recording ? "Enregistrement en cours" : trial.busy ? "Traitement de votre intervention…" : voiceAllowed ? recorder.status === "Microphone arrêté" ? "À vous de parler" : recorder.status : "La cour a la parole"}</span>
+                {recorder.recording && <meter aria-label="Niveau du microphone dans la scène" min={0} max={100} value={recorder.level} />}
               </div>
-            )}
+            </div>
           </div>
+          {subtitles && !sceneError && (
+            <div
+              className="scene-caption"
+              aria-label="Sous-titres de l’audience"
+            >
+              <span>{s.entries.at(-1)?.speaker}</span>
+              <p>{s.entries.at(-1)?.text}</p>
+            </div>
+          )}
         </>
       )}
       <div className="trial-grid">
@@ -635,6 +736,11 @@ export function Trial() {
         </aside>
       </div>
       <div className="audio-controls">
+        <button className="button" disabled={!connected || s.finished} onClick={() => {
+          setDirectorStarted(true); setAutomatic(!automatic);
+          if (!automatic) { setAudioError(""); setSound(!serverMode || s.ttsAvailable); queue.current?.retry(); }
+          else { setSound(false); recorder.stop(true); }
+        }}>{automatic ? "Mettre l’audience en pause" : directorStarted ? "Reprendre l’audience" : "Démarrer l’audience automatique"}</button>
         <button
           className="button secondary"
           aria-pressed={sound}
@@ -724,73 +830,29 @@ export function Trial() {
               <FileText size={17} />
               Présenter une pièce
             </button>
-            <button
-              className={
-                "button " + (recorder.recording ? "recording" : "secondary")
-              }
-              disabled={!voiceAllowed}
-              onPointerDown={(e) => {
-                if (prefs.captureMode === "hold") {
-                  e.currentTarget.setPointerCapture(e.pointerId);
-                  void recorder.start();
-                }
-              }}
-              onPointerUp={() => {
-                if (prefs.captureMode === "hold") recorder.stop();
-              }}
-              onPointerCancel={() => recorder.stop(true)}
-              onLostPointerCapture={() => {
-                if (recorder.recording && prefs.captureMode === "hold")
-                  recorder.stop();
-              }}
-              onKeyDown={(e) => {
-                if (
-                  prefs.captureMode === "hold" &&
-                  e.code === "Space" &&
-                  !e.repeat
-                ) {
-                  e.preventDefault();
-                  void recorder.start();
-                }
-              }}
-              onKeyUp={(e) => {
-                if (prefs.captureMode === "hold" && e.code === "Space") {
-                  e.preventDefault();
-                  recorder.stop();
-                }
-              }}
-              onClick={() => {
-                if (prefs.captureMode === "toggle")
-                  void (recorder.recording
-                    ? recorder.stop()
-                    : recorder.start());
-              }}
-            >
-              <Mic size={17} />
-              {prefs.captureMode === "hold"
-                ? "Maintenir pour parler"
-                : recorder.recording
-                  ? "Arrêter la capture"
-                  : "Démarrer la capture"}
-            </button>
+            {textMode && microphoneControl}
             {s.allowedActions.includes("continue") && (
               <button
                 className="button"
-                disabled={!connected || trial.busy}
+                disabled={!connected || trial.busy || recorder.recording || audioBusy}
                 onClick={() => void trial.send({ type: "continue" })}
               >
                 {s.step === 5
                   ? "Consulter le jugement"
                   : s.objection
                     ? "Entendre la décision"
-                    : "Écouter la cour"}
+                    : s.allowedActions.includes("user_text") ? "Terminer mon intervention" : "Écouter la cour"}
                 <ChevronRight size={16} />
               </button>
             )}
           </div>
           <div className="capture-status">
             <p className="footnote" role="status">
-              {recorder.status}
+              {serverMode && !s.audioCodecs.length
+                ? "Transcription vocale indisponible sur ce serveur. Le texte reste utilisable."
+                : !s.allowedActions.includes("user_audio") && serverMode
+                  ? "La cour a la parole. Le micro sera disponible à votre tour."
+                  : audioBusy ? "La cour termine sa prise de parole avant l’ouverture du micro." : recorder.status}
               {!serverMode
                 ? " · capture locale, envoyez ensuite votre intervention par écrit."
                 : ""}
@@ -806,9 +868,10 @@ export function Trial() {
             <label className="checkbox">
               <input
                 type="checkbox"
-                checked={prefs.captureMode === "toggle"}
+                checked={captureMode === "toggle"}
                 onChange={(e) => {
                   recorder.stop(true);
+                  setCaptureMode(e.target.checked ? "toggle" : "hold");
                   savePreferences({
                     ...getPreferences(),
                     captureMode: e.target.checked ? "toggle" : "hold",
