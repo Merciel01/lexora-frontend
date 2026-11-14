@@ -84,6 +84,18 @@ it("attend une acceptation et préserve l’identifiant lors du réessai", async
   expect(JSON.parse(String(socket.sent[0])).clientMessageId).toBe("stable-id");
   transport.close();
 });
+it("attend une génération locale longue sans annoncer un échec prématuré",async()=>{
+  const {transport}=await fixture();
+  vi.useFakeTimers();
+  let completed=false;
+  const sent=transport.send({type:"user_text",text:"Argument"},"local-slow").then(()=>{completed=true;});
+  await vi.advanceTimersByTimeAsync(120000);
+  expect(completed).toBe(false);
+  transport.receive(JSON.stringify({type:"ack",clientMessageId:"local-slow",accepted:true}));
+  await sent;
+  expect(completed).toBe(true);
+  transport.close();
+});
 it("ne rejoue pas un message après déconnexion", async () => {
   const { transport, socket } = await fixture();
   const promise = transport.send({ type: "user_text", text: "Argument" }, "id");

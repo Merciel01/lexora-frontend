@@ -121,6 +121,7 @@ export const snapshotSchema = z.object({
   seq: z.number().int().nonnegative().default(0),
   audioCodecs: z.array(z.string()).default([]),
   ttsAvailable: z.boolean().default(false),
+  replyEngine: z.enum(["local", "external", "scripted"]).optional(),
   currentAudio: z.object({turnId:z.string(),speaker:z.enum(speakerIds),url:z.string()}).optional(),
   startedAt: z.string(),
   endAt: z.string().optional(),

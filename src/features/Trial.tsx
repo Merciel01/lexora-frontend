@@ -754,6 +754,8 @@ export function Trial() {
           {serverMode
             ? s.ttsAvailable ? "Voix serveur activée ; la transcription reste accessible." : "Voix serveur non activée. Les échanges texte sont disponibles."
             : "Voix locale de simulation, facultative. Aucune réponse IA réelle."}
+          {serverMode && s.replyEngine === "local" && <><br />Réponses aux interventions : modèle local, à partir d’extraits du dossier. Sans source de droit validée.</>}
+          {serverMode && trial.busy && s.replyEngine === "local" && <><br />La cour prépare sa réponse. Le calcul local peut prendre jusqu’à deux minutes.</>}
         </p>
         {playbackDelay !== undefined && (
           <small>Réception → lecture : {Math.round(playbackDelay)} ms</small>
