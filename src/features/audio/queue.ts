@@ -1,3 +1,4 @@
+import { followAudioMouth } from "./mouth";
 export type QueueItem = {
   id: string;
   turnId: string;
@@ -138,9 +139,11 @@ export function remoteAudioItem(
   sentenceIndex: number,
   url: string,
   onStart?: () => void,
+  onLevel?: (level: number) => void,
 ): QueueItem {
   let audio: HTMLAudioElement | undefined;
   let settle: (() => void) | undefined;
+  let stopMeter: (() => void) | undefined;
   return {
     id,
     turnId,
@@ -148,18 +151,23 @@ export function remoteAudioItem(
     play: () =>
       new Promise<void>((resolve, reject) => {
         audio = new Audio(url);
+        if (onLevel) stopMeter = followAudioMouth(audio, onLevel);
         settle = resolve;
         audio.onended = () => {
+          stopMeter?.();
           audio?.removeAttribute("src");
           resolve();
         };
-        audio.onerror = () =>
+        audio.onerror = () => {
+          stopMeter?.();
           reject(new Error("Le son de cette phrase est indisponible."));
+        };
         audio.onplaying = () => onStart?.();
-        void audio.play().catch(reject);
+        void audio.play().catch(error => { stopMeter?.(); reject(error); });
       }),
     stop: () => {
       audio?.pause();
+      stopMeter?.();
       if (audio) {
         audio.removeAttribute("src");
         audio.load();

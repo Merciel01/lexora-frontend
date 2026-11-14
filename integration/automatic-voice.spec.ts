@@ -38,6 +38,9 @@ test('ouverture automatique, attente étudiant et vrai micro transcrit localemen
   const opening=page.waitForResponse(r=>r.url().includes('/audio/'),{timeout:120000});
   await page.getByRole('button',{name:'Démarrer l’audience automatique',exact:true}).click();
   expect((await opening).status()).toBe(200);
+  const scene=page.frames().find(f=>f.url().includes('/courtroom/index.html?embed=1'))!;
+  await expect.poll(()=>scene.evaluate('actors.president.voiceMouth || 0'),{timeout:30000}).toBeGreaterThan(0.02);
+  expect(await scene.evaluate('Object.values(actors).filter(a=>a.id!==speakerId).every(a=>(a.voiceMouth||0)<0.01)')).toBe(true);
   await expect.poll(async()=> (await state()).step,{timeout:150000}).toBe(2);
   // No manual court-advance click was needed for opening and facts.
   await expect(page.getByRole('button',{name:'Démarrer la capture',exact:true})).toBeEnabled({timeout:60000});
@@ -56,6 +59,7 @@ test('ouverture automatique, attente étudiant et vrai micro transcrit localemen
   expect((await state()).step).toBe(2); // Do not steal the student's remaining speaking time.
   await page.getByRole('button',{name:'Mettre l’audience en pause',exact:true}).click();
   await expect(page.getByRole('button',{name:'Reprendre l’audience',exact:true})).toBeVisible();
+  await expect.poll(()=>scene.evaluate('Object.values(actors).every(a=>(a.voiceMouth||0)<0.01)'),{timeout:5000}).toBe(true);
   await page.screenshot({path:'test-results/automatic-voice-real.png',fullPage:true});
   await page.getByRole('button',{name:'Reprendre l’audience',exact:true}).click();
   await expect(page.getByRole('button',{name:'Terminer mon intervention',exact:true})).toBeEnabled({timeout:60000});

@@ -78,6 +78,11 @@ runtime = runtime
     "const dt=manualCourtTest||paused?0:Math.max(0,Math.min(raw,.08));simulationTick(dt);",
     "if(manualCourtTest||paused||document.hidden)return;const dt=Math.max(0,Math.min(raw,.08));simulationTick(dt);",
   );
+const mouthAnchor = "const demo=$('mouthDemo').checked&&!audio.getAttribute('src');";
+if (!runtime.includes(mouthAnchor)) throw new Error("Scene importer needs review: mouth animation changed");
+runtime = runtime.replace(mouthAnchor, `const envelope=window.lexoraMouth;
+ if(LEXORA_EMBED&&envelope){const fresh=performance.now()-envelope.updated<300,target=a.id===speakerId&&fresh&&!$('reduceMotion').checked?envelope.level:0;a.voiceMouth=(a.voiceMouth||0)+(target-(a.voiceMouth||0))*(1-Math.exp(-dt*(target>(a.voiceMouth||0)?24:18)));morph(a,'Jaw_Open',a.voiceMouth*.28);morph(a,'Viseme_A',a.voiceMouth*.45);morph(a,'Lips_Rest_Closed',1-a.voiceMouth*.8);return;}
+ const demo=$('mouthDemo').checked&&!audio.getAttribute('src');`);
 await writeFile(join(target, "runtime.js"), runtime.trimEnd() + "\n");
 await copyFile(join(web, "engine.js"), join(target, "engine.js"));
 await copyFile(

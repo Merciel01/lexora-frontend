@@ -33,3 +33,9 @@ Le microphone est accessible en bas de la scène 3D, avec son état et son nivea
 La caméra automatique, sélectionnée par défaut, alterne toutes les douze secondes entre le plan général, l’intervenant et la place de l’étudiant, avec les transitions douces du moteur. Une vue sélectionnée manuellement reste fixe. Une manipulation à la souris suspend l’automatisme pendant vingt secondes ; les mouvements réduits désactivent cette alternance. La pause explicite de l’audience revient au plan général.
 
 Vérification : tests Chrome sur ordinateur et mobile, maintien des vues manuelles, mouvements réduits et capture/transcription locale depuis le panneau de scène. Les fichiers GLB et les animations existantes ne sont pas modifiés.
+
+## Animation de bouche liée à l’audio
+
+En audience serveur, le son WAV réellement joué est analysé localement avec Web Audio (20 mesures par seconde). Son amplitude pilote la mâchoire et l’ouverture des lèvres du seul locuteur actif, avec lissage et seuil de silence. Un signal périmé, une interruption, une erreur ou la fin du son referme la bouche ; les mouvements réduits désactivent cette animation. La sortie sonore n’est amplifiée ni envoyée à un nouveau service. Les ressources Web Audio sont libérées après chaque lecture.
+
+Il s’agit d’une enveloppe d’amplitude, pas d’une synchronisation phonétique : A/E/O/MBP ne sont pas reconnus. Les voix de démonstration du navigateur et la capture micro de l’étudiant ne sont pas analysées par cette chaîne. L’explorateur autonome conserve sa démonstration existante. Les GLB et les actions Blender restent inchangés. L’importeur conserve l’adaptation lors des prochaines réimportations.

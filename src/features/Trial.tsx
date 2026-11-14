@@ -220,6 +220,7 @@ class SceneBoundary extends Component<
 export function Trial() {
   const [audioError, setAudioError] = useState("");
   const [playing, setPlaying] = useState(false);
+  const [mouthLevel, setMouthLevel] = useState(0);
   const [audioBusy, setAudioBusy] = useState(false);
   const [automatic, setAutomatic] = useState(false);
   const [directorStarted, setDirectorStarted] = useState(false);
@@ -289,6 +290,7 @@ export function Trial() {
           setPlaybackDelay(performance.now() - received);
           setPlaying(true);
         },
+        level => { if (live.current) setMouthLevel(level); },
       );
       const play = item.play;
       item.play = async () => {
@@ -632,6 +634,7 @@ export function Trial() {
                   <Courtroom
                     activeSpeaker={recorder.recording ? "student" : s.activeSpeaker}
                     speaking={playing || turnSpeaking || recorder.recording}
+                    mouthLevel={serverMode ? (playing ? mouthLevel : 0) : undefined}
                     objection={s.objection}
                     reduced={reduced}
                     quality={sceneQuality}

@@ -5,6 +5,7 @@ import { isCourtroomEvent, type CourtroomState } from "./courtroomProtocol";
 export default function Courtroom({
   activeSpeaker = "president",
   speaking = false,
+  mouthLevel,
   objection = false,
   reduced = false,
   quality = "auto",
@@ -16,6 +17,7 @@ export default function Courtroom({
 }: {
   activeSpeaker?: SpeakerId;
   speaking?: boolean;
+  mouthLevel?: number;
   objection?: boolean;
   reduced?: boolean;
   quality?: CourtroomState["quality"];
@@ -34,6 +36,7 @@ export default function Courtroom({
     () => ({
       activeSpeaker,
       speaking,
+      mouthLevel,
       objection,
       reduced,
       quality,
@@ -44,6 +47,7 @@ export default function Courtroom({
     [
       activeSpeaker,
       speaking,
+      mouthLevel,
       objection,
       reduced,
       quality,
@@ -92,10 +96,15 @@ export default function Courtroom({
   }, []);
   useEffect(() => {
     if (!ready) return;
-    frame.current?.contentWindow?.postMessage(
+    const send = () => frame.current?.contentWindow?.postMessage(
       { channel: "lexora-courtroom", version: 1, type: "state", state },
       window.location.origin,
     );
+    send();
+    // Keep constant-amplitude sounds alive; the scene closes stale envelopes.
+    if (state.mouthLevel === undefined) return;
+    const timer = window.setInterval(send, 100);
+    return () => window.clearInterval(timer);
   }, [state, ready]);
   return (
     <>

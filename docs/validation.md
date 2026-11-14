@@ -98,3 +98,7 @@ Après intégration du micro dans la scène et des caméras automatiques : 41 te
 Correction : l’audience utilise désormais la préférence de capture enregistrée, au lieu de forcer le mode bascule. Sans préférence locale existante, le défaut frontend est démarrer/arrêter ; une préférence reçue du compte reste prioritaire.
 
 La recette isolée contre Django réel réussit également : ouverture et faits automatiques, attente au tour étudiant, MediaRecorder alimenté par un extrait synthétique, transcription locale acceptée, réponse de la cour, pause/reprise, réquisitoire, répliques et clôture. Aucun enregistrement personnel utilisé. Cette recette ne valide ni la reconnaissance de toutes les voix réelles ni une synchronisation labiale par phonèmes.
+
+## Bouche réactive à la voix — 14 novembre 2026
+
+50 tests unitaires, types, lint et build réussis. Recette Django réelle avec voix locale : amplitude observée sur le président, autres locuteurs silencieux, fermeture à la pause et cycle complet jusqu’à la clôture. Deux tests Chrome ciblés sur ordinateur et mobile couvrent les morphes, silence, péremption du signal, mouvements réduits et rejet des amplitudes hors limites. Captures de scène examinées ; elles ne constituent pas une validation phonétique en gros plan. La recette vocale utilise uniquement un enregistrement synthétique.

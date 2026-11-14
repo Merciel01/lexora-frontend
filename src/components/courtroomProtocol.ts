@@ -2,6 +2,7 @@ import type { SpeakerId } from "../services/contracts";
 export interface CourtroomState {
   activeSpeaker: SpeakerId;
   speaking: boolean;
+  mouthLevel?: number;
   objection: boolean;
   reduced: boolean;
   quality: "auto" | "low" | "high";
