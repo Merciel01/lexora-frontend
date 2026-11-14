@@ -39,3 +39,9 @@ Vérification : tests Chrome sur ordinateur et mobile, maintien des vues manuell
 En audience serveur, le son WAV réellement joué est analysé localement avec Web Audio (20 mesures par seconde). Son amplitude pilote la mâchoire et l’ouverture des lèvres du seul locuteur actif, avec lissage et seuil de silence. Un signal périmé, une interruption, une erreur ou la fin du son referme la bouche ; les mouvements réduits désactivent cette animation. La sortie sonore n’est amplifiée ni envoyée à un nouveau service. Les ressources Web Audio sont libérées après chaque lecture.
 
 Il s’agit d’une enveloppe d’amplitude, pas d’une synchronisation phonétique : A/E/O/MBP ne sont pas reconnus. Les voix de démonstration du navigateur et la capture micro de l’étudiant ne sont pas analysées par cette chaîne. L’explorateur autonome conserve sa démonstration existante. Les GLB et les actions Blender restent inchangés. L’importeur conserve l’adaptation lors des prochaines réimportations.
+
+## Positions de bouche phonétiques
+
+Si le backend fournit les catégories Rhubarb A–H/X, le lecteur les suit avec audio.currentTime et les convertit en morphes existants A/E/O/MBP avec transitions lissées. A ferme les lèvres, E/F les arrondissent, X revient au repos. Les morphes G/H restent des approximations : les personnages n’ont pas de contrôles dédiés pour les dents/lèvres et la langue. Le seuil de silence, la pause, la péremption du signal et les mouvements réduits restent appliqués. Sans métadonnées valides, l’animation d’amplitude reste active. Aucun son étudiant ni voix de démonstration du navigateur n’est analysé par cette voie.
+
+Cette analyse est phonétique et automatique, sans garantie d’alignement parfait en français. Elle peut ajouter jusqu’à 16 secondes avant une nouvelle lecture ; les résultats sont mis en cache par le backend. Installation/licences : lexora-backend/docs/phonetic-mouth.md. Les GLB sont préservés.

@@ -221,6 +221,7 @@ export function Trial() {
   const [audioError, setAudioError] = useState("");
   const [playing, setPlaying] = useState(false);
   const [mouthLevel, setMouthLevel] = useState(0);
+  const [mouthShape, setMouthShape] = useState<string>();
   const [audioBusy, setAudioBusy] = useState(false);
   const [automatic, setAutomatic] = useState(false);
   const [directorStarted, setDirectorStarted] = useState(false);
@@ -291,6 +292,7 @@ export function Trial() {
           setPlaying(true);
         },
         level => { if (live.current) setMouthLevel(level); },
+        shape => { if (live.current) setMouthShape(shape); },
       );
       const play = item.play;
       item.play = async () => {
@@ -635,6 +637,7 @@ export function Trial() {
                     activeSpeaker={recorder.recording ? "student" : s.activeSpeaker}
                     speaking={playing || turnSpeaking || recorder.recording}
                     mouthLevel={serverMode ? (playing ? mouthLevel : 0) : undefined}
+                    mouthShape={playing ? mouthShape : undefined}
                     objection={s.objection}
                     reduced={reduced}
                     quality={sceneQuality}

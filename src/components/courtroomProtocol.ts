@@ -3,6 +3,7 @@ export interface CourtroomState {
   activeSpeaker: SpeakerId;
   speaking: boolean;
   mouthLevel?: number;
+  mouthShape?: string;
   objection: boolean;
   reduced: boolean;
   quality: "auto" | "low" | "high";

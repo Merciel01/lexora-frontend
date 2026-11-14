@@ -102,3 +102,7 @@ La recette isolée contre Django réel réussit également : ouverture et faits 
 ## Bouche réactive à la voix — 14 novembre 2026
 
 50 tests unitaires, types, lint et build réussis. Recette Django réelle avec voix locale : amplitude observée sur le président, autres locuteurs silencieux, fermeture à la pause et cycle complet jusqu’à la clôture. Deux tests Chrome ciblés sur ordinateur et mobile couvrent les morphes, silence, péremption du signal, mouvements réduits et rejet des amplitudes hors limites. Captures de scène examinées ; elles ne constituent pas une validation phonétique en gros plan. La recette vocale utilise uniquement un enregistrement synthétique.
+
+## Positions phonétiques locales — 14 novembre 2026
+
+53 tests unitaires, types, lint et build réussis. Deux recettes Chrome ordinateur/mobile vérifient lèvres fermées, arrondi, repos, silences et transitions. La recette isolée Django réelle réussit avec engine=rhubarb-phonetic, formes reçues pendant la vraie lecture et cycle complet jusqu’à clôture. L’annulation pendant l’analyse optionnelle est testée sans démarrage tardif d’un audio. L’évaluation phonétique française et la qualité visuelle de chaque visage en gros plan restent à affiner.

@@ -31,11 +31,12 @@
     send("ready", { characters: results.loaded.length, sceneVersion: 27 });
   };
   function valid(state) {
+    if (state?.mouthShape !== undefined && (typeof state.mouthShape !== "string" || !/^[A-HX]$/.test(state.mouthShape))) return false;
     if (state?.mouthLevel !== undefined && (!Number.isFinite(state.mouthLevel) || state.mouthLevel < 0 || state.mouthLevel > 1)) return false;
     return state && typeof state === "object" && Object.hasOwn(roles, state.activeSpeaker) && typeof state.speaking === "boolean" && typeof state.objection === "boolean" && typeof state.reduced === "boolean" && ["auto", "low", "high"].includes(state.quality) && ["auto", "wide", "speaker", "student"].includes(state.cameraMode) && typeof state.gesture === "string" && state.gesture.length < 80 && typeof state.emotion === "string" && state.emotion.length < 80;
   }
   function apply(state) {
-    window.lexoraMouth = state.mouthLevel === undefined ? null : {level: state.speaking ? state.mouthLevel : 0, updated: performance.now()};
+    window.lexoraMouth = state.mouthLevel === undefined ? null : {level: state.speaking ? state.mouthLevel : 0, shape: state.speaking ? state.mouthShape : "X", updated: performance.now()};
     const id = roles[state.activeSpeaker], actor = actors[id];
     schedule = null;
     $("reduceMotion").checked = state.reduced;

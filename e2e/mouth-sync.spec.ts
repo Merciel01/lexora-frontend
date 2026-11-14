@@ -12,6 +12,13 @@ test('bouche pilotée par amplitude, silence, expiration et mouvements réduits'
   await page.locator('canvas').screenshot({path:'test-results/mouth-speaking-'+test.info().project.name+'.png'});
   await send({mouthLevel:0});
   await expect.poll(()=>page.evaluate('actors.president.voiceMouth||0')).toBeLessThan(.01);
+  await send({mouthShape:'F'});
+  await expect.poll(()=>page.evaluate('actors.president.voiceWeights?.[3]||0')).toBeGreaterThan(.2);
+  await send({mouthShape:'A'});
+  await expect.poll(()=>page.evaluate('actors.president.voiceWeights?.[4]||0')).toBeGreaterThan(.2);
+  await expect.poll(()=>page.evaluate('actors.president.voiceWeights?.[0]||0')).toBeLessThan(.01);
+  await send({mouthShape:'X'});
+  await expect.poll(()=>page.evaluate('actors.president.voiceWeights?.every(v=>v<.01)')).toBe(true);
   await send({gesture:'reading'});
   await expect.poll(()=>page.evaluate('actors.president.voiceMouth||0')).toBeGreaterThan(.1);
   await send();

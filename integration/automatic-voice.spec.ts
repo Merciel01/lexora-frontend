@@ -35,11 +35,14 @@ test('ouverture automatique, attente étudiant et vrai micro transcrit localemen
   const sceneMic=page.getByRole('group',{name:'Microphone dans la scène',exact:true});
   await expect(sceneMic).toBeVisible();
   expect((await state()).audioCodecs.length).toBeGreaterThan(0);
-  const opening=page.waitForResponse(r=>r.url().includes('/audio/'),{timeout:120000});
+  const opening=page.waitForResponse(r=>r.url().includes('/audio/')&&r.url().includes('mouth=1'),{timeout:120000});
   await page.getByRole('button',{name:'Démarrer l’audience automatique',exact:true}).click();
-  expect((await opening).status()).toBe(200);
+  const analysis=await opening;
+  expect(analysis.status()).toBe(200);
+  expect((await analysis.json()).engine).toBe('rhubarb-phonetic');
   const scene=page.frames().find(f=>f.url().includes('/courtroom/index.html?embed=1'))!;
   await expect.poll(()=>scene.evaluate('actors.president.voiceMouth || 0'),{timeout:30000}).toBeGreaterThan(0.02);
+  await expect.poll(()=>scene.evaluate('window.lexoraMouth?.shape'),{timeout:10000}).toMatch(/^[A-H]$/);
   expect(await scene.evaluate('Object.values(actors).filter(a=>a.id!==speakerId).every(a=>(a.voiceMouth||0)<0.01)')).toBe(true);
   await expect.poll(async()=> (await state()).step,{timeout:150000}).toBe(2);
   // No manual court-advance click was needed for opening and facts.

@@ -1,4 +1,19 @@
-/** Amplitude envelope only: this does not infer phonemes or visemes. */
+export type MouthShape = "A"|"B"|"C"|"D"|"E"|"F"|"G"|"H"|"X";
+export type MouthCue = {start:number;end:number;value:MouthShape};
+export function parseMouthCues(value: unknown): MouthCue[] {
+  if (!Array.isArray(value) || value.length > 10000) return [];
+  let end = 0;
+  for (const cue of value) {
+    if (!cue || !Number.isFinite(cue.start) || !Number.isFinite(cue.end) || cue.start < end ||
+        cue.end <= cue.start || cue.end > 300 || typeof cue.value !== "string" || !/^[A-HX]$/.test(cue.value)) return [];
+    end = cue.end;
+  }
+  return value;
+}
+export function mouthShapeAt(cues: MouthCue[], seconds: number): MouthShape {
+  return cues.find(cue => seconds >= cue.start && seconds < cue.end)?.value || "X";
+}
+/** Amplitude fallback: this does not infer phonemes. */
 export function mouthAmplitude(samples: Uint8Array): number {
   if (!samples.length) return 0;
   let sum = 0;

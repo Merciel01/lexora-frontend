@@ -81,7 +81,9 @@ runtime = runtime
 const mouthAnchor = "const demo=$('mouthDemo').checked&&!audio.getAttribute('src');";
 if (!runtime.includes(mouthAnchor)) throw new Error("Scene importer needs review: mouth animation changed");
 runtime = runtime.replace(mouthAnchor, `const envelope=window.lexoraMouth;
- if(LEXORA_EMBED&&envelope){const fresh=performance.now()-envelope.updated<300,target=a.id===speakerId&&fresh&&!$('reduceMotion').checked?envelope.level:0;a.voiceMouth=(a.voiceMouth||0)+(target-(a.voiceMouth||0))*(1-Math.exp(-dt*(target>(a.voiceMouth||0)?24:18)));morph(a,'Jaw_Open',a.voiceMouth*.28);morph(a,'Viseme_A',a.voiceMouth*.45);morph(a,'Lips_Rest_Closed',1-a.voiceMouth*.8);return;}
+ if(LEXORA_EMBED&&envelope){const fresh=performance.now()-envelope.updated<300,target=a.id===speakerId&&fresh&&!$('reduceMotion').checked?envelope.level:0;a.voiceMouth=(a.voiceMouth||0)+(target-(a.voiceMouth||0))*(1-Math.exp(-dt*(target>(a.voiceMouth||0)?24:18)));const shapes={X:[0,0,0,0,0],A:[0,0,0,0,.7],B:[.04,0,.5,0,0],C:[.16,.35,.25,0,0],D:[.28,.65,0,0,0],E:[.12,0,0,.4,0],F:[.06,0,0,.7,0],G:[.025,0,.3,0,.2],H:[.14,0,.45,0,0]},weights=shapes[envelope.shape];
+ if(weights){a.voiceWeights??=[0,0,0,0,0];const gain=target>.01?.45+.55*target:0;for(let i=0;i<5;i++){a.voiceWeights[i]+=(weights[i]*gain-a.voiceWeights[i])*(1-Math.exp(-dt*24));morph(a,['Jaw_Open','Viseme_A','Viseme_E','Viseme_O','Viseme_MBP'][i],a.voiceWeights[i]);}morph(a,'Lips_Rest_Closed',1-Math.min(.8,a.voiceWeights[0]*2));}
+ else{a.voiceWeights=[0,0,0,0,0];morph(a,'Jaw_Open',a.voiceMouth*.28);morph(a,'Viseme_A',a.voiceMouth*.45);morph(a,'Lips_Rest_Closed',1-a.voiceMouth*.8);}return;}
  const demo=$('mouthDemo').checked&&!audio.getAttribute('src');`);
 await writeFile(join(target, "runtime.js"), runtime.trimEnd() + "\n");
 await copyFile(join(web, "engine.js"), join(target, "engine.js"));

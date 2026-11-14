@@ -6,6 +6,7 @@ export default function Courtroom({
   activeSpeaker = "president",
   speaking = false,
   mouthLevel,
+  mouthShape,
   objection = false,
   reduced = false,
   quality = "auto",
@@ -18,6 +19,7 @@ export default function Courtroom({
   activeSpeaker?: SpeakerId;
   speaking?: boolean;
   mouthLevel?: number;
+  mouthShape?: string;
   objection?: boolean;
   reduced?: boolean;
   quality?: CourtroomState["quality"];
@@ -37,6 +39,7 @@ export default function Courtroom({
       activeSpeaker,
       speaking,
       mouthLevel,
+      mouthShape,
       objection,
       reduced,
       quality,
@@ -48,6 +51,7 @@ export default function Courtroom({
       activeSpeaker,
       speaking,
       mouthLevel,
+      mouthShape,
       objection,
       reduced,
       quality,
