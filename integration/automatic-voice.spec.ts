@@ -27,6 +27,11 @@ test('ouverture automatique, attente étudiant et vrai micro transcrit localemen
   await expect(page.getByText('CONNECTÉ À DJANGO')).toBeVisible();
   const trialId=page.url().split('/').at(-1)!;
   const state=async()=> (await page.request.get(`/api/trials/${trialId}`)).json();
+  await page.getByRole('button',{name:'Voir la salle 3D'}).click();
+  await expect(page.frameLocator('iframe[title="Salle d’audience 3D Lexora"]').locator('canvas')).toBeVisible();
+  await expect(page.locator('.courtroom-loading')).toBeHidden({timeout:90000});
+  const sceneMic=page.getByRole('group',{name:'Microphone dans la scène',exact:true});
+  await expect(sceneMic).toBeVisible();
   expect((await state()).audioCodecs.length).toBeGreaterThan(0);
   const opening=page.waitForResponse(r=>r.url().includes('/audio/'),{timeout:120000});
   await page.getByRole('button',{name:'Démarrer l’audience automatique',exact:true}).click();
@@ -35,7 +40,11 @@ test('ouverture automatique, attente étudiant et vrai micro transcrit localemen
   // No manual court-advance click was needed for opening and facts.
   await expect(page.getByRole('button',{name:'Démarrer la capture',exact:true})).toBeEnabled({timeout:60000});
   await page.getByRole('button',{name:'Démarrer la capture',exact:true}).click();
-  await expect(page.getByText('Enregistrement local en cours',{exact:false})).toBeVisible();
+  await expect(sceneMic.getByText('Enregistrement en cours',{exact:true})).toBeVisible();
+  const sceneBox=await page.locator('.court-scene').boundingBox(),micBox=await sceneMic.boundingBox();
+  expect(micBox!.y).toBeGreaterThanOrEqual(sceneBox!.y);
+  expect(micBox!.y+micBox!.height).toBeLessThanOrEqual(sceneBox!.y+sceneBox!.height);
+  await page.locator('.court-scene').screenshot({path:'test-results/scene-microphone-recording.png'});
   // Keep genuine MediaRecorder running long enough to capture the synthetic spoken phrase.
   await page.waitForTimeout(6000);
   expect((await state()).step).toBe(2);

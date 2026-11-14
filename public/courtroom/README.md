@@ -25,3 +25,11 @@ Le chargement indique le nombre d’éléments prêts (décor et neuf personnage
 La boucle d’affichage s’arrête pendant une pause ou lorsque le document est caché. Les tests de simulation manuelle pilotent seuls les pas de temps, sans rendu et simulation concurrents à pas nul. Les transformations et assertions de fin de cycle restent vérifiées. Les adaptations de chargement et de boucle sont aussi appliquées par l’importeur `scripts/sync-courtroom.mjs` pour être conservées lors d’une réimportation.
 
 Le canal de progression et les points de vue restent internes à l’interface 3D. Le contrat REST/WebSocket Django est inchangé. En attente du backend, utiliser `VITE_APP_MODE=demo` pour le parcours complet et les conseils simulés ; le mode serveur conserve ses erreurs explicites si Django n’est pas disponible.
+
+## Microphone et caméra automatique
+
+Le microphone est accessible en bas de la scène 3D, avec son état et son niveau pendant la capture. Le mode texte conserve le même contrôle sous la transcription. Les autorisations de parole et les modes maintien/bascule restent identiques.
+
+La caméra automatique, sélectionnée par défaut, alterne toutes les douze secondes entre le plan général, l’intervenant et la place de l’étudiant, avec les transitions douces du moteur. Une vue sélectionnée manuellement reste fixe. Une manipulation à la souris suspend l’automatisme pendant vingt secondes ; les mouvements réduits désactivent cette alternance. La pause explicite de l’audience revient au plan général.
+
+Vérification : tests Chrome sur ordinateur et mobile, maintien des vues manuelles, mouvements réduits et capture/transcription locale depuis le panneau de scène. Les fichiers GLB et les animations existantes ne sont pas modifiés.

@@ -3,6 +3,22 @@
   if (!LEXORA_EMBED) return;
   const roles = { president: "president", "assessor-1": "assesseur_01", "assessor-2": "assesseur_02", prosecutor: "ministere_public", opposition: "avocat_adverse", clerk: "greffier", student: "etudiant_avocat", client_prevenu: "client_prevenu", temoin_01: "temoin_01" };
   let ready = false, pending = null, previous = null;
+  let cameraShot = 0, lastCameraShot = 0, manualCameraUntil = 0;
+  function autoCamera(state, reset = false) {
+    if (!ready || document.hidden || state.cameraMode !== "auto") return;
+    if (state.reduced) { if (reset) chooseView("general"); return; }
+    if (Date.now() < manualCameraUntil) return;
+    const id = roles[state.activeSpeaker];
+    const shots = ["general", id === "etudiant_avocat" ? "student" : id, "student"];
+    cameraShot = reset ? (state.speaking ? 1 : 0) : (cameraShot + 1) % shots.length;
+    chooseView(shots[cameraShot]);
+    lastCameraShot = Date.now();
+  }
+  orbit.addEventListener("start", () => { manualCameraUntil = Date.now() + 20000; });
+  const cameraDirector = setInterval(() => {
+    if (pending && Date.now() - lastCameraShot >= 12000) autoCamera(pending);
+  }, 1000);
+  window.addEventListener("pagehide", () => clearInterval(cameraDirector), { once: true });
   const send = (type, extra = {}) => parent.postMessage({ channel: "lexora-courtroom", version: 1, type, ...extra }, location.origin);
   window.lexoraSceneProgress = (loaded, total) => send("progress", { loaded, total });
   window.lexoraSceneUnavailable = () => send("unavailable");
@@ -15,7 +31,7 @@
     send("ready", { characters: results.loaded.length, sceneVersion: 27 });
   };
   function valid(state) {
-    return state && typeof state === "object" && Object.hasOwn(roles, state.activeSpeaker) && typeof state.speaking === "boolean" && typeof state.objection === "boolean" && typeof state.reduced === "boolean" && ["auto", "low", "high"].includes(state.quality) && ["wide", "speaker", "student"].includes(state.cameraMode) && typeof state.gesture === "string" && state.gesture.length < 80 && typeof state.emotion === "string" && state.emotion.length < 80;
+    return state && typeof state === "object" && Object.hasOwn(roles, state.activeSpeaker) && typeof state.speaking === "boolean" && typeof state.objection === "boolean" && typeof state.reduced === "boolean" && ["auto", "low", "high"].includes(state.quality) && ["auto", "wide", "speaker", "student"].includes(state.cameraMode) && typeof state.gesture === "string" && state.gesture.length < 80 && typeof state.emotion === "string" && state.emotion.length < 80;
   }
   function apply(state) {
     const id = roles[state.activeSpeaker], actor = actors[id];
@@ -34,7 +50,9 @@
       if (state.speaking) { speakerId = id; takeFloor(id, mode, null, variant); }
       else { speakerId = id; quiet(actor); }
     }
-    if (!previous || previous.cameraMode !== state.cameraMode || (state.cameraMode === "speaker" && previous.activeSpeaker !== state.activeSpeaker)) chooseView(state.cameraMode === "wide" ? "general" : state.cameraMode === "student" ? "student" : id);
+    if (state.cameraMode === "auto") {
+      if (!previous || previous.cameraMode !== state.cameraMode || previous.activeSpeaker !== state.activeSpeaker || previous.reduced !== state.reduced) autoCamera(state, true);
+    } else if (!previous || previous.cameraMode !== state.cameraMode || (state.cameraMode === "speaker" && previous.activeSpeaker !== state.activeSpeaker)) chooseView(state.cameraMode === "wide" ? "general" : state.cameraMode === "student" ? "student" : id);
     previous = { ...state };
   }
   window.addEventListener("message", event => {

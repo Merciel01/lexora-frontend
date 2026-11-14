@@ -5,7 +5,7 @@ export interface CourtroomState {
   objection: boolean;
   reduced: boolean;
   quality: "auto" | "low" | "high";
-  cameraMode: "wide" | "speaker" | "student";
+  cameraMode: "auto" | "wide" | "speaker" | "student";
   gesture: string;
   emotion: string;
 }

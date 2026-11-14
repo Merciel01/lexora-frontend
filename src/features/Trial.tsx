@@ -37,6 +37,7 @@ import { stage, stageLabels, displayedTime } from "./trial/state";
 import { Heading, Action, Badge } from "../components/Layout";
 import { Modal } from "../components/Modal";
 import { ExhibitViewer } from "../components/ExhibitViewer";
+import { MicrophoneControl } from "../components/MicrophoneControl";
 const Courtroom = lazy(() => import("../components/Courtroom"));
 export function Setup() {
   const mic = useMicrophone();
@@ -239,7 +240,7 @@ export function Trial() {
   const [captureMode, setCaptureMode] = useState<"hold" | "toggle">("toggle");
   const [subtitles, setSubtitles] = useState(prefs.subtitles);
   const [textMode, setTextMode] = useState(read("mode", "text") === "text");
-  const [camera, setCamera] = useState<"wide" | "speaker" | "student">("wide");
+  const [camera, setCamera] = useState<"auto" | "wide" | "speaker" | "student">("auto");
   const [sceneQuality, setSceneQuality] = useState(prefs.quality);
   const [pieceOpen, setPieceOpen] = useState(false);
   const [piece, setPiece] = useState("P01");
@@ -479,6 +480,8 @@ export function Trial() {
       localVoice: !serverMode ? next : getPreferences().localVoice,
     });
   }
+  const microphoneControl = <MicrophoneControl recording={recorder.recording} allowed={voiceAllowed}
+    mode={captureMode} start={recorder.start} stop={recorder.stop} />;
   return (
     <>
       <Heading
@@ -551,6 +554,7 @@ export function Trial() {
                 value={camera}
                 onChange={(e) => setCamera(e.target.value as typeof camera)}
               >
+                <option value="auto">Caméra automatique</option>
                 <option value="wide">Vue générale</option>
                 <option value="speaker">Intervenant</option>
                 <option value="student">Ma place</option>
@@ -626,12 +630,12 @@ export function Trial() {
                   }
                 >
                   <Courtroom
-                    activeSpeaker={s.activeSpeaker}
-                    speaking={playing || turnSpeaking}
+                    activeSpeaker={recorder.recording ? "student" : s.activeSpeaker}
+                    speaking={playing || turnSpeaking || recorder.recording}
                     objection={s.objection}
                     reduced={reduced}
                     quality={sceneQuality}
-                    cameraMode={camera}
+                    cameraMode={camera === "auto" && directorStarted && !automatic ? "wide" : camera}
                     gesture={gesture}
                     emotion={emotion}
                     onUnavailable={(reason) => { setSceneReason(reason || "Le navigateur n’a pas pu conserver la scène. Réessayez ; le mode texte reste disponible."); setSceneError(true); }}
@@ -641,6 +645,13 @@ export function Trial() {
               </SceneBoundary>
             )}
             {s.objection && <strong className="objection">OBJECTION</strong>}
+            <div className="scene-microphone" role="group" aria-label="Microphone dans la scène">
+              {microphoneControl}
+              <div className="scene-microphone-status" aria-live="polite">
+                <span>{recorder.recording ? "Enregistrement en cours" : trial.busy ? "Traitement de votre intervention…" : voiceAllowed ? recorder.status === "Microphone arrêté" ? "À vous de parler" : recorder.status : "La cour a la parole"}</span>
+                {recorder.recording && <meter aria-label="Niveau du microphone dans la scène" min={0} max={100} value={recorder.level} />}
+              </div>
+            </div>
           </div>
           {subtitles && !sceneError && (
             <div
@@ -813,55 +824,7 @@ export function Trial() {
               <FileText size={17} />
               Présenter une pièce
             </button>
-            <button
-              className={
-                "button " + (recorder.recording ? "recording" : "secondary")
-              }
-              disabled={!voiceAllowed}
-              onPointerDown={(e) => {
-                if (captureMode === "hold") {
-                  e.currentTarget.setPointerCapture(e.pointerId);
-                  void recorder.start();
-                }
-              }}
-              onPointerUp={() => {
-                if (captureMode === "hold") recorder.stop();
-              }}
-              onPointerCancel={() => recorder.stop(true)}
-              onLostPointerCapture={() => {
-                if (recorder.recording && captureMode === "hold")
-                  recorder.stop();
-              }}
-              onKeyDown={(e) => {
-                if (
-                  captureMode === "hold" &&
-                  e.code === "Space" &&
-                  !e.repeat
-                ) {
-                  e.preventDefault();
-                  void recorder.start();
-                }
-              }}
-              onKeyUp={(e) => {
-                if (captureMode === "hold" && e.code === "Space") {
-                  e.preventDefault();
-                  recorder.stop();
-                }
-              }}
-              onClick={() => {
-                if (captureMode === "toggle")
-                  void (recorder.recording
-                    ? recorder.stop()
-                    : recorder.start());
-              }}
-            >
-              <Mic size={17} />
-              {captureMode === "hold"
-                ? "Maintenir pour parler"
-                : recorder.recording
-                  ? "Arrêter la capture"
-                  : "Démarrer la capture"}
-            </button>
+            {textMode && microphoneControl}
             {s.allowedActions.includes("continue") && (
               <button
                 className="button"
