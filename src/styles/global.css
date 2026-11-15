@@ -2709,3 +2709,5 @@ summary {
     aspect-ratio: 16 / 9;
   }
 }
+
+.scene-microphone { flex-wrap: wrap; }

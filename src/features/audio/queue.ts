@@ -171,20 +171,29 @@ export function remoteAudioItem(
       if (controller.signal.aborted && cancelled) return;
       return new Promise<void>((resolve, reject) => {
         audio = new Audio(url);
+        let lastTime = -1;
+        let lastProgress = Date.now();
+        const watchdog = setInterval(() => {
+          if (audio && audio.currentTime > lastTime) { lastTime=audio.currentTime; lastProgress=Date.now(); }
+          if (Date.now()-lastProgress >= 45000) {
+            audio?.pause(); clearInterval(watchdog); clearMouth();
+            reject(new Error("La lecture ne progresse plus. Relancez la voix."));
+          }
+        }, 1000);
         if (onLevel) stopMeter = followAudioMouth(audio, onLevel);
         if (cues.length) shapeTimer = setInterval(() => onShape?.(audio?.paused || audio?.ended ? "X" : mouthShapeAt(cues, audio?.currentTime || 0)), 40);
-        settle = resolve;
+        settle = () => { clearInterval(watchdog); resolve(); };
         audio.onended = () => {
-          clearMouth();
+          clearInterval(watchdog); clearMouth();
           audio?.removeAttribute("src");
           resolve();
         };
         audio.onerror = () => {
-          clearMouth();
+          clearInterval(watchdog); clearMouth();
           reject(new Error("Le son de cette phrase est indisponible."));
         };
         audio.onplaying = () => onStart?.();
-        void audio.play().catch(error => { clearMouth(); reject(error); });
+        void audio.play().catch(error => { clearInterval(watchdog); clearMouth(); reject(error); });
       });
     },
     stop: () => {

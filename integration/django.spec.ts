@@ -55,11 +55,11 @@ test("parcours LEXORA contre Django réel, sans interception réseau", async ({ 
   await expect(page.frameLocator('iframe[title="Salle d’audience 3D Lexora"]').locator("canvas")).toBeVisible();
   await expect(page.locator(".courtroom-loading")).toBeHidden({ timeout: 60000 });
   await page.screenshot({ path: "test-results/lexora-django-real.png", fullPage: true });
+  await expect(page.locator(".scene-microphone-status")).toContainText(/Lecture automatique arrêtée|La cour parle|Préparation de la voix/);
+  await page.getByRole("button", { name: "Écouter la cour automatiquement", exact: true }).click();
+  await expect.poll(async () => (await state()).step, {timeout:90000}).toBe(2);
+  await page.getByRole("button", { name: "Pause de la cour", exact:true }).click();
   await page.getByRole("button", { name: "Passer en mode texte" }).click();
-  for (let step = 1; step <= 2; step++) {
-    await page.getByRole("button", { name: /^(Écouter la cour|Terminer mon intervention)$/ }).click();
-    await expect.poll(async () => (await state()).step).toBe(step);
-  }
   await expect(page.getByLabel("Votre argumentation")).toBeEnabled();
   await page.getByLabel("Votre argumentation").fill("Premièrement, je distingue les éléments établis des hypothèses et je demande un examen contradictoire des pièces du dossier.");
   await page.getByRole("button", { name: "Envoyer", exact: true }).click();
