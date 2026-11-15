@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { mouthAmplitude, mouthShapeAt, parseMouthCues } from "./mouth";
+import { describe, expect, it, vi } from "vitest";
+import { mouthAmplitude, mouthShapeAt, parseMouthCues, followAudioMouth } from "./mouth";
 
 describe("voice amplitude envelope", () => {
   it("uses real audio time, silence gaps and exact cue boundaries", () => {
@@ -26,4 +26,11 @@ describe("voice amplitude envelope", () => {
     expect(loud).toBeLessThanOrEqual(1);
     expect(mouthAmplitude(Uint8Array.from([0,255]))).toBe(1);
   });
+});
+
+it("does not route audio into a suspended audio context",async()=>{
+  const source=vi.fn();
+  vi.stubGlobal("AudioContext",vi.fn(function(){return {state:"suspended",resume:()=>Promise.resolve(),createMediaElementSource:source,createAnalyser:()=>({fftSize:0,getByteTimeDomainData:vi.fn()}),close:()=>Promise.resolve()};}));
+  const stop=followAudioMouth({paused:false,ended:false} as HTMLAudioElement,()=>{});
+  await Promise.resolve(); expect(source).not.toHaveBeenCalled();stop();vi.unstubAllGlobals();
 });

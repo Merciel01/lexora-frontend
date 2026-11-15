@@ -1,18 +1,21 @@
 import {afterEach,expect,it,vi} from "vitest";
 import {remoteAudioItem} from "./queue";
 afterEach(()=>{vi.unstubAllGlobals();vi.useRealTimers();});
-it("cancels optional mouth analysis without starting an orphaned voice",async()=>{
-  const Audio=vi.fn();
-  vi.stubGlobal("Audio",Audio);
+it("starts voice immediately while optional lip analysis is pending and cancels both",async()=>{
+  const audio={currentTime:0,play:vi.fn(()=>Promise.resolve()),pause:vi.fn(),removeAttribute:vi.fn(),load:vi.fn()};
+  vi.stubGlobal("Audio",vi.fn(function(){return audio;}));
   vi.stubGlobal("location",{href:"http://localhost/app/trials/test"});
+  let signal:AbortSignal;
   vi.stubGlobal("fetch",vi.fn((_url,options)=>new Promise((_resolve,reject)=>{
-    options.signal.addEventListener("abort",()=>reject(new Error("aborted")));
+    signal=options.signal;
+    signal.addEventListener("abort",()=>reject(new Error("aborted")));
   })));
   const item=remoteAudioItem("id","turn",0,"/api/trials/test/audio/turn",undefined,undefined,()=>{});
   const playback=item.play();
-  item.stop();
-  await playback;
-  expect(Audio).not.toHaveBeenCalled();
+  expect(audio.play).toHaveBeenCalledOnce();
+  item.stop(); await playback;
+  expect(signal!.aborted).toBe(true);
+  expect(audio.pause).toHaveBeenCalledOnce();
 });
 
 it("rejects stalled playback and leaves the phrase retryable",async()=>{

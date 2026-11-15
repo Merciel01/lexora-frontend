@@ -667,10 +667,13 @@ export function Trial() {
             {s.objection && <strong className="objection">OBJECTION</strong>}
             <div className="scene-microphone" role="group" aria-label="Microphone dans la scène">
               {microphoneControl}
-              {!s.finished && <button className="button secondary" disabled={!connected || trial.busy} onClick={toggleAutomatic}>{automatic ? "Pause de la cour" : "Écouter la cour automatiquement"}</button>}
+              {!s.finished && <button className="button secondary" disabled={!connected && !automatic} onClick={toggleAutomatic}>{automatic ? "Pause de la cour" : "Écouter la cour automatiquement"}</button>}
               {audioError && <button className="button secondary" onClick={() => { soundRef.current=true; setSound(true); setAudioError(""); queue.current?.retry(); }}>Relancer la voix</button>}
               <div className="scene-microphone-status" aria-live="polite">
-                <span>{recorder.recording ? "Enregistrement en cours" : trial.busy ? `${processingLabel} ${Math.max(0,Math.floor((now-(trial.processingSince ?? now))/1000))} s` : voiceAllowed ? recorder.status === "Microphone arrêté" ? "À vous de parler" : recorder.status : audioError ? "Lecture bloquée" : audioBusy && !playing ? "Préparation de la voix…" : playing ? "La cour parle" : !automatic ? "Lecture automatique arrêtée" : "La cour prépare la suite"}</span>
+                <span>{recorder.recording ? "Enregistrement en cours" : trial.error ? "Action interrompue — réessayez ci-dessous" : trial.busy ? `${processingLabel} ${Math.max(0,Math.floor((now-(trial.processingSince ?? now))/1000))} s` : voiceAllowed ? recorder.status === "Microphone arrêté" ? "À vous de parler" : recorder.status : audioError ? "Lecture bloquée" : audioBusy && !playing ? "Préparation de la voix…" : playing ? "La cour parle" : !automatic ? "Lecture automatique arrêtée" : "La cour prépare la suite"}</span>
+                {trial.busy && <small>{s.step===5 ? "Délibération locale : jusqu’à 3 minutes. La pause arrête l’enchaînement ; le calcul se termine en arrière-plan." : "Calcul local en cours : jusqu’à 2 minutes."}</small>}
+                {trial.error && <span role="alert">{trial.error} {connected ? <button className="button secondary" disabled={trial.busy} onClick={() => void trial.retry()}>Réessayer l’action</button> : <button className="button secondary" onClick={trial.reconnect}>Reconnecter la cour</button>}</span>}
+                {audioError && <small>{audioError}</small>}
                 {recorder.recording && <meter aria-label="Niveau du microphone dans la scène" min={0} max={100} value={recorder.level} />}
               </div>
             </div>
@@ -752,7 +755,7 @@ export function Trial() {
         </aside>
       </div>
       <div className="audio-controls">
-        <button className="button" disabled={!connected || s.finished} onClick={toggleAutomatic}>{automatic ? "Mettre l’audience en pause" : directorStarted ? "Reprendre l’audience" : "Démarrer l’audience automatique"}</button>
+        <button className="button" disabled={(!connected && !automatic) || s.finished} onClick={toggleAutomatic}>{automatic ? "Mettre l’audience en pause" : directorStarted ? "Reprendre l’audience" : "Démarrer l’audience automatique"}</button>
         <button
           className="button secondary"
           aria-pressed={sound}

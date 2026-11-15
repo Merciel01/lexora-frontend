@@ -30,16 +30,19 @@ export function followAudioMouth(audio: HTMLAudioElement, report: (level: number
     context = new AudioContext();
     const analyser = context.createAnalyser();
     analyser.fftSize = 512;
-    const source = context.createMediaElementSource(audio);
-    source.connect(context.destination);
-    source.connect(analyser);
+    const activeContext=context;
+    // Leave native audio untouched if the browser refuses to unlock Web Audio.
+    void activeContext.resume().then(()=>{
+      if(stopped || activeContext.state!=="running") return;
+      const source=activeContext.createMediaElementSource(audio);
+      source.connect(activeContext.destination); source.connect(analyser);
+    }).catch(()=>report(0));
     const samples = new Uint8Array(analyser.fftSize);
     timer = setInterval(() => {
       if (stopped) return;
       analyser.getByteTimeDomainData(samples);
       report(audio.paused || audio.ended ? 0 : mouthAmplitude(samples));
     }, 50);
-    void context.resume().catch(() => report(0));
   } catch {
     // Keep ordinary playback available when analysis is unsupported.
     report(0);

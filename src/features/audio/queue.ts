@@ -157,18 +157,6 @@ export function remoteAudioItem(
       cancelled = false;
       controller = new AbortController();
       let cues: ReturnType<typeof parseMouthCues> = [];
-      if (onShape) {
-        const timeout = setTimeout(() => controller?.abort(), 16000);
-        try {
-          const metadata = new URL(url, location.href);
-          metadata.searchParams.set("mouth", "1");
-          const response = await fetch(metadata, {signal: controller.signal, credentials:"same-origin"});
-          if (response.ok) cues = parseMouthCues((await response.json()).cues);
-        } catch { /* Optional analysis must not prevent voice playback. */ }
-        finally { clearTimeout(timeout); }
-      }
-      // Cancellation during analysis must not start an orphaned voice.
-      if (controller.signal.aborted && cancelled) return;
       return new Promise<void>((resolve, reject) => {
         audio = new Audio(url);
         let lastTime = -1;
@@ -176,24 +164,37 @@ export function remoteAudioItem(
         const watchdog = setInterval(() => {
           if (audio && audio.currentTime > lastTime) { lastTime=audio.currentTime; lastProgress=Date.now(); }
           if (Date.now()-lastProgress >= 45000) {
-            audio?.pause(); clearInterval(watchdog); clearMouth();
+            audio?.pause(); controller?.abort(); clearInterval(watchdog); clearMouth();
             reject(new Error("La lecture ne progresse plus. Relancez la voix."));
           }
         }, 1000);
         if (onLevel) stopMeter = followAudioMouth(audio, onLevel);
-        if (cues.length) shapeTimer = setInterval(() => onShape?.(audio?.paused || audio?.ended ? "X" : mouthShapeAt(cues, audio?.currentTime || 0)), 40);
+        if (onShape) shapeTimer = setInterval(() => onShape?.(!cues.length ? undefined : audio?.paused || audio?.ended ? "X" : mouthShapeAt(cues, audio?.currentTime || 0)), 40);
         settle = () => { clearInterval(watchdog); resolve(); };
         audio.onended = () => {
-          clearInterval(watchdog); clearMouth();
+          controller?.abort(); clearInterval(watchdog); clearMouth();
           audio?.removeAttribute("src");
           resolve();
         };
         audio.onerror = () => {
-          clearInterval(watchdog); clearMouth();
+          controller?.abort(); clearInterval(watchdog); clearMouth();
           reject(new Error("Le son de cette phrase est indisponible."));
         };
         audio.onplaying = () => onStart?.();
-        void audio.play().catch(error => { clearInterval(watchdog); clearMouth(); reject(error); });
+        void audio.play().catch(error => { controller?.abort(); clearInterval(watchdog); clearMouth(); reject(error); });
+        // Optional lip analysis runs alongside playback; it never delays the voice.
+        if (onShape) {
+          const analysisController=controller!;
+          const timeout=setTimeout(()=>analysisController.abort(),16000);
+          void (async()=>{
+            try {
+              const metadata=new URL(url,location.href); metadata.searchParams.set("mouth","1");
+              const response=await fetch(metadata,{signal:analysisController.signal,credentials:"same-origin"});
+              if(response.ok && !cancelled && !analysisController.signal.aborted) cues=parseMouthCues((await response.json()).cues);
+            } catch { /* Amplitude animation remains available. */ }
+            finally { clearTimeout(timeout); }
+          })();
+        }
       });
     },
     stop: () => {
