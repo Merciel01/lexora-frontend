@@ -108,9 +108,13 @@ export function VerdictView({
             </section>
             <section className="panel judgment">
               <h2>Jugement motivé</h2>
+              {verdict.decision && <Badge>Décision de simulation · {verdict.decision.engine === "local" ? "président virtuel" : "scénario prédéfini"}</Badge>}
+              {!verdict.decision && serverMode && <p className="notice">Cette ancienne audience ne contient pas de verdict motivé du président.</p>}
               <p>{verdict.judgment}</p>
               <h3>Issue du litige</h3>
               <p>{verdict.outcome}</p>
+              {verdict.decision?.scope && <p className="footnote">{verdict.decision.scope}</p>}
+              {!!verdict.decision?.evidenceIds.length && <p>Pièces retenues dans les motifs : {verdict.decision.evidenceIds.join(", ")}.</p>}
               {verdict.citations.length ? (
                 <div>
                   <h3>Références</h3>
@@ -128,8 +132,7 @@ export function VerdictView({
                 <Badge>Exemple pédagogique — références non fournies</Badge>
               )}
               <p className="footnote">
-                La note évalue la prestation, indépendamment de l’issue du
-                litige.
+                La note évalue l’argumentation, les pièces et la réponse aux points décisifs du verdict. Une issue favorable ne donne pas automatiquement une meilleure note.
               </p>
             </section>
           </div>

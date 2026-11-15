@@ -327,14 +327,14 @@ export function Trial() {
   }, [s?.currentAudio?.turnId, sound]);
   // Only court-only stages advance. Student stages always wait for the student's choice.
   useEffect(() => {
-    if (!s || !automatic || !connected || trial.busy || recorder.recording || audioBusy || audioError || s.finished ||
+    if (!s || !automatic || !connected || trial.busy || trial.error || recorder.recording || audioBusy || audioError || s.finished ||
         !s.allowedActions.includes("continue") || (s.allowedActions.includes("user_text") && s.step !== 3) || document.hidden) return;
     const timer = setTimeout(() => {
       if (queue.current?.size || document.hidden) return;
       void trial.send({type: "continue"});
     }, sound ? 1000 : Math.max(2500, Math.min(20000, (s.entries.at(-1)?.text.length || 0) * 45)));
     return () => clearTimeout(timer);
-  }, [automatic, connected, trial.busy, recorder.recording, audioBusy, audioError, sound, pageVisible, s?.step, s?.entries.at(-1)?.id]);
+  }, [automatic, connected, trial.busy, trial.error, recorder.recording, audioBusy, audioError, sound, pageVisible, s?.step, s?.entries.at(-1)?.id]);
   const navigate = useNavigate();
   useEffect(() => {
     live.current = true;
@@ -474,6 +474,13 @@ export function Trial() {
     )
       setDraft("");
   }
+  function replayDecision() {
+    if (!s?.currentAudio || audioBusy || playing) return;
+    queue.current?.clear();
+    remoteTurns.current.delete(`${s.currentAudio.turnId}:0`);
+    soundRef.current=true;setSound(true);setAudioError("");
+    receive({type:"audio",eventId:"verdict-replay:"+crypto.randomUUID(),seq:s.seq,...s.currentAudio,sentenceIndex:0});
+  }
   function toggleSound() {
     const next = !sound;
     setSound(next);
@@ -486,6 +493,7 @@ export function Trial() {
   }
   const microphoneControl = <MicrophoneControl recording={recorder.recording} allowed={voiceAllowed}
     mode={captureMode} start={recorder.start} stop={recorder.stop} />;
+  const processingLabel=s.step===5 ? "Préparation du verdict…" : "Traitement de votre intervention…";
   return (
     <>
       <Heading
@@ -655,7 +663,7 @@ export function Trial() {
             <div className="scene-microphone" role="group" aria-label="Microphone dans la scène">
               {microphoneControl}
               <div className="scene-microphone-status" aria-live="polite">
-                <span>{recorder.recording ? "Enregistrement en cours" : trial.busy ? `Traitement de votre intervention… ${Math.max(0,Math.floor((now-(trial.processingSince ?? now))/1000))} s` : voiceAllowed ? recorder.status === "Microphone arrêté" ? "À vous de parler" : recorder.status : "La cour a la parole"}</span>
+                <span>{recorder.recording ? "Enregistrement en cours" : trial.busy ? `${processingLabel} ${Math.max(0,Math.floor((now-(trial.processingSince ?? now))/1000))} s` : voiceAllowed ? recorder.status === "Microphone arrêté" ? "À vous de parler" : recorder.status : "La cour a la parole"}</span>
                 {recorder.recording && <meter aria-label="Niveau du microphone dans la scène" min={0} max={100} value={recorder.level} />}
               </div>
             </div>
@@ -756,7 +764,7 @@ export function Trial() {
             ? s.ttsAvailable ? "Voix serveur activée ; la transcription reste accessible." : "Voix serveur non activée. Les échanges texte sont disponibles."
             : "Voix locale de simulation, facultative. Aucune réponse IA réelle."}
           {serverMode && s.replyEngine === "local" && <><br />Réponses aux interventions : modèle local, à partir d’extraits du dossier. Sans source de droit validée.</>}
-          {serverMode && trial.busy && s.replyEngine === "local" && <><br />La cour prépare sa réponse · {Math.max(0,Math.floor((now-(trial.processingSince ?? now))/1000))} s écoulées. Le calcul local peut prendre jusqu’à deux minutes.</>}
+          {serverMode && trial.busy && s.replyEngine === "local" && <><br />{s.step===5 ? "Le président prépare son verdict" : "La cour prépare sa réponse"} · {Math.max(0,Math.floor((now-(trial.processingSince ?? now))/1000))} s écoulées. Le calcul local peut prendre jusqu’à {s.step===5 ? "trois" : "deux"} minutes.</>}
         </p>
         {playbackDelay !== undefined && (
           <small>Réception → lecture : {Math.round(playbackDelay)} ms</small>
@@ -903,9 +911,10 @@ export function Trial() {
         </>
       ) : (
         <div className="page-actions end">
-          <Action to={"/app/trials/" + s.id + "/result"}>
+          {s.hasDecision && s.ttsAvailable && s.currentAudio && <button className="button secondary" disabled={audioBusy||playing} onClick={replayDecision}>Écouter le verdict du président</button>}
+          {audioBusy || playing ? <p role="status">Le président prononce sa décision. L’évaluation sera accessible après sa lecture.</p> : <Action to={"/app/trials/" + s.id + "/result"}>
             Consulter mon évaluation
-          </Action>
+          </Action>}
         </div>
       )}
       {import.meta.env.DEV && (

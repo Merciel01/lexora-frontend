@@ -96,6 +96,17 @@ it("attend une génération locale longue sans annoncer un échec prématuré",a
   expect(completed).toBe(true);
   transport.close();
 });
+it("réserve le délai long uniquement au verdict en délibération",async()=>{
+  const {transport}=await fixture();
+  transport.receive(JSON.stringify({type:"phase_change",eventId:"deliberation",seq:1,step:5,allowedActions:["continue"]}));
+  vi.useFakeTimers();
+  let done=false;
+  const sent=transport.send({type:"continue"},"verdict-slow").then(()=>{done=true;});
+  await vi.advanceTimersByTimeAsync(180000);
+  expect(done).toBe(false);
+  transport.receive(JSON.stringify({type:"ack",clientMessageId:"verdict-slow",accepted:true}));
+  await sent;expect(done).toBe(true);transport.close();
+});
 it("ne rejoue pas un message après déconnexion", async () => {
   const { transport, socket } = await fixture();
   const promise = transport.send({ type: "user_text", text: "Argument" }, "id");

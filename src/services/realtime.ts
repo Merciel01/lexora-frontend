@@ -27,6 +27,7 @@ export class ServerTrialTransport {
   private seen = new Set<string>();
   private buffered: TrialEvent[] = [];
   private seq = 0;
+  private step = 0;
   private pending = new Map<
     string,
     {
@@ -56,6 +57,7 @@ export class ServerTrialTransport {
         throw new Error("L’adresse WebSocket n’a pas été fournie par Django.");
       this.cb.onSnapshot(snapshot);
       this.seq = snapshot.seq;
+      this.step = snapshot.step;
       const socket = this.socketFactory(websocketUrl(snapshot.websocketUrl));
       this.socket = socket;
       socket.onopen = () => {
@@ -93,6 +95,7 @@ export class ServerTrialTransport {
       if (snapshot.id !== this.trialId)
         throw new Error("Audience incohérente.");
       this.seq = snapshot.seq;
+      this.step = snapshot.step;
       this.cb.onSnapshot(snapshot);
       this.syncing = false;
       const buffered = this.buffered.sort((a, b) => a.seq - b.seq);
@@ -170,6 +173,8 @@ export class ServerTrialTransport {
       return;
     }
     this.seq = value.seq;
+    if(value.type === "phase_change") this.step=value.step;
+    if(value.type === "snapshot") this.step=value.snapshot.step;
     this.seen.add(value.eventId);
     if (this.seen.size > 500)
       this.seen.delete(this.seen.values().next().value!);
@@ -185,6 +190,8 @@ export class ServerTrialTransport {
         timestamp: new Date().toISOString(),
       },
       clientMessageId,
+      undefined,
+      command.type === "continue" && this.step === 5 ? 210000 : 150000,
     );
   }
   sendAudio(blob: Blob, clientMessageId: string, accepted: string[]) {
@@ -210,7 +217,7 @@ export class ServerTrialTransport {
       blob,
     );
   }
-  private transmit(payload: unknown, id: string, binary?: Blob) {
+  private transmit(payload: unknown, id: string, binary?: Blob, timeoutMs = 150000) {
     if (
       this.disposed ||
       this.syncing ||
@@ -229,7 +236,7 @@ export class ServerTrialTransport {
             "Accusé de réception non reçu. Vous pouvez réessayer avec le même identifiant.",
           ),
         );
-      }, 150000); // Local inference (120s) plus STT; ack follows durable commit.
+      }, timeoutMs); // Verdict alone has a longer budget; normal replies retain 150s.
       this.pending.set(id, { resolve, reject, timer });
       try {
         this.socket!.send(JSON.stringify(payload));

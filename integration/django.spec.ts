@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test("parcours LEXORA contre Django réel, sans interception réseau", async ({ page }) => {
+  test.setTimeout(180000);
   const errors: string[] = [];
   const audioUrls: string[] = [];
   page.on("websocket", socket => socket.on("framereceived", frame => {
@@ -56,7 +57,7 @@ test("parcours LEXORA contre Django réel, sans interception réseau", async ({ 
   await page.screenshot({ path: "test-results/lexora-django-real.png", fullPage: true });
   await page.getByRole("button", { name: "Passer en mode texte" }).click();
   for (let step = 1; step <= 2; step++) {
-    await page.getByRole("button", { name: "Écouter la cour", exact: true }).click();
+    await page.getByRole("button", { name: /^(Écouter la cour|Terminer mon intervention)$/ }).click();
     await expect.poll(async () => (await state()).step).toBe(step);
   }
   await expect(page.getByLabel("Votre argumentation")).toBeEnabled();
@@ -75,13 +76,21 @@ test("parcours LEXORA contre Django réel, sans interception réseau", async ({ 
   await expect(page.getByText("CONNECTÉ À DJANGO")).toBeVisible();
   await expect(page.getByLabel("Votre argumentation")).toBeEnabled();
   for (let step = 3; step <= 5; step++) {
-    await page.getByRole("button", { name: "Écouter la cour", exact: true }).click();
+    await page.getByRole("button", { name: /^(Écouter la cour|Terminer mon intervention)$/ }).click();
     await expect.poll(async () => (await state()).step).toBe(step);
   }
   await page.getByRole("button", { name: "Consulter le jugement", exact: true }).click();
   await expect(page.getByRole("link", { name: "Consulter mon évaluation" })).toBeVisible();
+  if(process.env.LEXORA_TEST_PIPER_MODEL){
+    const final=await state();expect(final.hasDecision).toBe(true);
+    const spoken=page.waitForResponse(r=>r.url().includes(final.currentAudio.url)&&!r.url().includes('mouth=1'),{timeout:90000});
+    await page.getByRole('button',{name:'Écouter le verdict du président',exact:true}).click();
+    await expect(page.getByText('Le président prononce sa décision. L’évaluation sera accessible après sa lecture.',{exact:true})).toBeVisible();
+    expect((await spoken).status()).toBe(200);
+    await expect(page.getByRole('link',{name:'Consulter mon évaluation'})).toBeVisible({timeout:90000});
+  }
   await page.getByRole("link", { name: "Consulter mon évaluation" }).click();
-  await expect(page.getByText("Exercice terminé — bilan pédagogique")).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Jugement motivé"})).toBeVisible();
   const me = await (await page.request.get("/api/me")).json();
   expect(me.xp).toBeGreaterThan(0);
   await page.reload();
