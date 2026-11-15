@@ -25,6 +25,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
   const [connection, setConnection] = useState<ConnectionState>("connecting");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [processingSince, setProcessingSince] = useState<number>();
   const inFlight = useRef(false);
   const [audioFailed, setAudioFailed] = useState<{ blob: Blob; id: string }>();
   const [failed, setFailed] = useState<{ command: Command; id: string }>();
@@ -129,6 +130,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
       return false;
     inFlight.current = true;
     setBusy(true);
+    setProcessingSince(Date.now());
     setError("");
     try {
       if (serverMode) await transport.current!.send(command, id);
@@ -173,6 +175,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
     setError("");
     try {
       setBusy(true);
+      setProcessingSince(Date.now());
       await transport.current?.sendAudio(
         blob,
         id,
@@ -207,6 +210,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
     connection,
     error,
     busy,
+    processingSince,
     failed,
     send,
     sendAudio,

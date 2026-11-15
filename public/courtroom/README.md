@@ -45,3 +45,7 @@ Il s’agit d’une enveloppe d’amplitude, pas d’une synchronisation phonét
 Si le backend fournit les catégories Rhubarb A–H/X, le lecteur les suit avec audio.currentTime et les convertit en morphes existants A/E/O/MBP avec transitions lissées. A ferme les lèvres, E/F les arrondissent, X revient au repos. Les morphes G/H restent des approximations : les personnages n’ont pas de contrôles dédiés pour les dents/lèvres et la langue. Le seuil de silence, la pause, la péremption du signal et les mouvements réduits restent appliqués. Sans métadonnées valides, l’animation d’amplitude reste active. Aucun son étudiant ni voix de démonstration du navigateur n’est analysé par cette voie.
 
 Cette analyse est phonétique et automatique, sans garantie d’alignement parfait en français. Elle peut ajouter jusqu’à 16 secondes avant une nouvelle lecture ; les résultats sont mis en cache par le backend. Installation/licences : lexora-backend/docs/phonetic-mouth.md. Les GLB sont préservés.
+
+## Budget CPU pendant l’attente
+
+Le message interne processing limite le rendu à environ 12 images/s lorsque le serveur traite l’intervention et qu’aucun personnage ne parle. Le rendu continue, puis retrouve sa cadence habituelle à la fin du traitement. Le compteur de temps écoulé est porté par l’interface principale ; ce n’est pas un pourcentage d’avancement ni une estimation de fin. Tests Chrome ordinateur/mobile dans e2e/processing-budget.spec.ts.

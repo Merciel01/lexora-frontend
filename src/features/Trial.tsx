@@ -638,6 +638,7 @@ export function Trial() {
                     speaking={playing || turnSpeaking || recorder.recording}
                     mouthLevel={serverMode ? (playing ? mouthLevel : 0) : undefined}
                     mouthShape={playing ? mouthShape : undefined}
+                    processing={trial.busy}
                     objection={s.objection}
                     reduced={reduced}
                     quality={sceneQuality}
@@ -654,7 +655,7 @@ export function Trial() {
             <div className="scene-microphone" role="group" aria-label="Microphone dans la scène">
               {microphoneControl}
               <div className="scene-microphone-status" aria-live="polite">
-                <span>{recorder.recording ? "Enregistrement en cours" : trial.busy ? "Traitement de votre intervention…" : voiceAllowed ? recorder.status === "Microphone arrêté" ? "À vous de parler" : recorder.status : "La cour a la parole"}</span>
+                <span>{recorder.recording ? "Enregistrement en cours" : trial.busy ? `Traitement de votre intervention… ${Math.max(0,Math.floor((now-(trial.processingSince ?? now))/1000))} s` : voiceAllowed ? recorder.status === "Microphone arrêté" ? "À vous de parler" : recorder.status : "La cour a la parole"}</span>
                 {recorder.recording && <meter aria-label="Niveau du microphone dans la scène" min={0} max={100} value={recorder.level} />}
               </div>
             </div>
@@ -755,7 +756,7 @@ export function Trial() {
             ? s.ttsAvailable ? "Voix serveur activée ; la transcription reste accessible." : "Voix serveur non activée. Les échanges texte sont disponibles."
             : "Voix locale de simulation, facultative. Aucune réponse IA réelle."}
           {serverMode && s.replyEngine === "local" && <><br />Réponses aux interventions : modèle local, à partir d’extraits du dossier. Sans source de droit validée.</>}
-          {serverMode && trial.busy && s.replyEngine === "local" && <><br />La cour prépare sa réponse. Le calcul local peut prendre jusqu’à deux minutes.</>}
+          {serverMode && trial.busy && s.replyEngine === "local" && <><br />La cour prépare sa réponse · {Math.max(0,Math.floor((now-(trial.processingSince ?? now))/1000))} s écoulées. Le calcul local peut prendre jusqu’à deux minutes.</>}
         </p>
         {playbackDelay !== undefined && (
           <small>Réception → lecture : {Math.round(playbackDelay)} ms</small>

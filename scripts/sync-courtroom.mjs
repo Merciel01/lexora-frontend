@@ -78,6 +78,9 @@ runtime = runtime
     "const dt=manualCourtTest||paused?0:Math.max(0,Math.min(raw,.08));simulationTick(dt);",
     "if(manualCourtTest||paused||document.hidden)return;const dt=Math.max(0,Math.min(raw,.08));simulationTick(dt);",
   );
+const frameAnchor = "const raw=(now-last)/1000;last=now;";
+if (!runtime.includes(frameAnchor)) throw new Error("Scene importer needs review: frame clock changed");
+runtime = runtime.replace(frameAnchor, "if(LEXORA_EMBED&&window.lexoraProcessing&&!window.lexoraSpeaking&&now-(window.lexoraRenderStamp||0)<1000/12)return;window.lexoraRenderStamp=now;" + frameAnchor);
 const mouthAnchor = "const demo=$('mouthDemo').checked&&!audio.getAttribute('src');";
 if (!runtime.includes(mouthAnchor)) throw new Error("Scene importer needs review: mouth animation changed");
 runtime = runtime.replace(mouthAnchor, `const envelope=window.lexoraMouth;

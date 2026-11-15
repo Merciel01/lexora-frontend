@@ -482,7 +482,7 @@ function simulationTick(dt){if(dt>0){if(!courtVisit)clock+=dt;updateSchedule();}
 
  for(const a of Object.values(actors)){gaze(a,dt);contacts(a,dt);clientFeet(a);adjustClientMicrophone(a,dt);updateGavel(a,dt);updateDocuments(a,dt);updateCourtPose(a,dt);}}
 
-function frame(_stamp){const now=performance.now();requestAnimationFrame(frame);const raw=(now-last)/1000;last=now;if(manualCourtTest||paused||document.hidden)return;const dt=Math.max(0,Math.min(raw,.08));simulationTick(dt);
+function frame(_stamp){const now=performance.now();requestAnimationFrame(frame);if(LEXORA_EMBED&&window.lexoraProcessing&&!window.lexoraSpeaking&&now-(window.lexoraRenderStamp||0)<1000/12)return;window.lexoraRenderStamp=now;const raw=(now-last)/1000;last=now;if(manualCourtTest||paused||document.hidden)return;const dt=Math.max(0,Math.min(raw,.08));simulationTick(dt);
 
 const width=renderer.domElement.clientWidth,height=renderer.domElement.clientHeight;resizeViewport(width,height);updateRoomCamera();orbit.update();renderer.render(scene,camera);
 

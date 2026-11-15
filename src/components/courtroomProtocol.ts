@@ -4,6 +4,7 @@ export interface CourtroomState {
   speaking: boolean;
   mouthLevel?: number;
   mouthShape?: string;
+  processing?: boolean;
   objection: boolean;
   reduced: boolean;
   quality: "auto" | "low" | "high";
