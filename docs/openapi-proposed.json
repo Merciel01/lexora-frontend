@@ -1137,6 +1137,17 @@
                     "default": false,
                     "type": "boolean"
                   },
+                  "hasDecision": {
+                    "type": "boolean"
+                  },
+                  "replyEngine": {
+                    "type": "string",
+                    "enum": [
+                      "local",
+                      "external",
+                      "scripted"
+                    ]
+                  },
                   "currentAudio": {
                     "type": "object",
                     "properties": {
@@ -1335,6 +1346,43 @@
                   },
                   "outcome": {
                     "type": "string"
+                  },
+                  "decision": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "string"
+                      },
+                      "motivation": {
+                        "type": "string"
+                      },
+                      "evidenceIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "engine": {
+                        "type": "string",
+                        "enum": [
+                          "local",
+                          "scripted"
+                        ]
+                      },
+                      "scope": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "motivation",
+                      "evidenceIds",
+                      "engine"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "resultVersion": {
+                    "type": "number"
                   },
                   "score": {
                     "type": "number",
@@ -2066,6 +2114,17 @@
             "default": false,
             "type": "boolean"
           },
+          "hasDecision": {
+            "type": "boolean"
+          },
+          "replyEngine": {
+            "type": "string",
+            "enum": [
+              "local",
+              "external",
+              "scripted"
+            ]
+          },
           "currentAudio": {
             "type": "object",
             "properties": {
@@ -2138,6 +2197,43 @@
           },
           "outcome": {
             "type": "string"
+          },
+          "decision": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "motivation": {
+                "type": "string"
+              },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "engine": {
+                "type": "string",
+                "enum": [
+                  "local",
+                  "scripted"
+                ]
+              },
+              "scope": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "motivation",
+              "evidenceIds",
+              "engine"
+            ],
+            "additionalProperties": false
+          },
+          "resultVersion": {
+            "type": "number"
           },
           "score": {
             "type": "number",
