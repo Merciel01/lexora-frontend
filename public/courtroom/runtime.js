@@ -284,8 +284,13 @@ function attentionTarget(a){const courtTarget=courtAttention(a);if(courtTarget)r
  if(a.id==='president'&&a.gavelAction)return {mode:'gavel',id:null,point:a.root.localToWorld(new V(-.38,.80,.55))};
  const head=bone(a,'head'),speaker=actors[speakerId],index=ids.indexOf(a.id),period=14+index*1.37,phase=(clock+index*3.17)%period;
  if(a.id===speakerId){
-  const other=['client_prevenu','etudiant_avocat','temoin_01'].includes(a.id)?actors.president:actors[previousSpeakerId]&&previousSpeakerId!==a.id?actors[previousSpeakerId]:a.id==='president'?actors.ministere_public:actors.president;
-  return {mode:'interlocutor',id:other?.id,point:other?world(bone(other,'head')):world(head).add(new V(0,0,2))};
+  // A speaker addresses the court in front, never the previous speaker at their side.
+  const hasNotes=!!(a.map.stage?.paper||a.documentMesh),speakingTime=clock-(a.turnStart??clock);
+  if(hasNotes&&(a.state==='reading'||speakingTime>2.5&&(speakingTime+index*.41)%8>6.3)){
+   return {mode:'notes',id:null,point:a.documents?world(a.documents.paper):localTarget(a,a.map.reading_target_blender)};
+  }
+  const h=a.root.worldToLocal(world(head)).y;
+  return {mode:'forward',id:null,point:localTarget(a,[0,-3.5,h-.04])};
  }
  const writing=a.id==='greffier'&&a.state==='writing';
  const notes=writing?phase%5<3.6:phase<(a.id==='greffier'?4.5:a.map.posture==='seated'?2.8:2.3);
