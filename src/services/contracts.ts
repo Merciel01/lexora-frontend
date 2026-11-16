@@ -106,6 +106,7 @@ export const entrySchema = z.object({
   id: z.string(),
   speaker: z.string(),
   text: z.string(),
+  citations: z.array(citationSchema).optional(),
 });
 export const snapshotSchema = z.object({
   id: z.string(),
@@ -177,6 +178,7 @@ export const eventSchema = z.discriminatedUnion("type", [
     turnId: z.string(),
     speaker: z.enum(speakerIds),
     text: z.string(),
+    citations: z.array(citationSchema).optional(),
     emotion: z.string().optional(),
     gesture: z.string().optional(),
     objection: z.boolean().default(false),

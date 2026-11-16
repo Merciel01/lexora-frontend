@@ -36,6 +36,8 @@ import { useTrial } from "./trial/useTrial";
 import { stage, stageLabels, displayedTime } from "./trial/state";
 import { Heading, Action, Badge } from "../components/Layout";
 import { Modal } from "../components/Modal";
+import { RagSources } from "../components/RagSources";
+import { RagAssistant } from "./RagAssistant";
 import { ExhibitViewer } from "../components/ExhibitViewer";
 import { MicrophoneControl } from "../components/MicrophoneControl";
 const Courtroom = lazy(() => import("../components/Courtroom"));
@@ -511,6 +513,7 @@ export function Trial() {
           (caseDetail?.title || s.caseId)
         }
       />
+      {serverMode && <RagAssistant key={s.id} trialId={s.id} />}
       <div className="trial-top">
         <Badge>
           {connected ? <Wifi size={13} /> : <X size={13} />}{" "}
@@ -724,6 +727,7 @@ export function Trial() {
               >
                 <strong>{e.speaker}</strong>
                 <p>{e.text}</p>
+                <RagSources sources={e.citations || []} />
               </article>
             ))}
           </div>

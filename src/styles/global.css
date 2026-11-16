@@ -2713,3 +2713,11 @@ summary {
 .scene-microphone { flex-wrap: wrap; }
 
 .scene-microphone-status .reply-preview { max-width: 560px; max-height: 9em; overflow-y: auto; line-height: 1.45; }
+
+
+.rag-assistant { margin-block: 1rem; }
+.rag-assistant summary, .rag-sources summary { cursor: pointer; font-weight: 600; }
+.rag-assistant form { display: grid; gap: .75rem; margin-block: 1rem; }
+.rag-assistant textarea { width: 100%; max-width: 100%; box-sizing: border-box; padding: .75rem; font: inherit; }
+.rag-sources article { padding-block: .75rem; overflow-wrap: anywhere; }
+.rag-sources blockquote { margin-inline: 0; white-space: pre-wrap; }

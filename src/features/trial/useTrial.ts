@@ -105,6 +105,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
                     id: event.eventId,
                     speaker: speakerLabels[event.speaker],
                     text: event.text,
+                    citations: event.citations,
                   },
                 ].slice(-2000),
               };
