@@ -103,7 +103,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
                   ...previous.entries,
                   {
                     id: event.eventId,
-                    speaker: speakerLabels[event.speaker],
+                    speaker: event.speakerLabel || speakerLabels[event.speaker],
                     text: event.text,
                     citations: event.citations,
                   },

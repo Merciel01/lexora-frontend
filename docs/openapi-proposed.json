@@ -1465,6 +1465,9 @@
                   "temoin_01"
                 ]
               },
+              "speakerLabel": {
+                "type": "string"
+              },
               "text": {
                 "type": "string"
               },

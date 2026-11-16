@@ -177,6 +177,7 @@ export const eventSchema = z.discriminatedUnion("type", [
     seq: z.number().int(),
     turnId: z.string(),
     speaker: z.enum(speakerIds),
+    speakerLabel: z.string().optional(),
     text: z.string(),
     citations: z.array(citationSchema).optional(),
     emotion: z.string().optional(),
