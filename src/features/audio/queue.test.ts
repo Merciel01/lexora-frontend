@@ -1,6 +1,13 @@
 import {afterEach,expect,it,vi} from "vitest";
 import {remoteAudioItem} from "./queue";
 afterEach(()=>{vi.unstubAllGlobals();vi.useRealTimers();});
+it("does not advance past a phrase ending before the advertised duration",async()=>{
+  const audio={currentTime:3,duration:12,play:()=>Promise.resolve(),removeAttribute:vi.fn(),onended:()=>{}};
+  vi.stubGlobal("Audio",vi.fn(function(){return audio;}));
+  const result=expect(remoteAudioItem("cut","turn",0,"/audio").play()).rejects.toThrow("avant sa fin");
+  audio.onended();
+  await result;
+});
 it("starts voice immediately while optional lip analysis is pending and cancels both",async()=>{
   const audio={currentTime:0,play:vi.fn(()=>Promise.resolve()),pause:vi.fn(),removeAttribute:vi.fn(),load:vi.fn()};
   vi.stubGlobal("Audio",vi.fn(function(){return audio;}));

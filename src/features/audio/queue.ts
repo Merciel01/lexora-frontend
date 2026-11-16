@@ -173,7 +173,12 @@ export function remoteAudioItem(
         settle = () => { clearInterval(watchdog); resolve(); };
         audio.onended = () => {
           controller?.abort(); clearInterval(watchdog); clearMouth();
+          const incomplete = Number.isFinite(audio?.duration) && audio!.duration > 0 && audio!.currentTime < audio!.duration - .25;
           audio?.removeAttribute("src");
+          if (incomplete) {
+            reject(new Error("La phrase a été interrompue avant sa fin. Relancez la voix."));
+            return;
+          }
           resolve();
         };
         audio.onerror = () => {
