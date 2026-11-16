@@ -56,6 +56,8 @@ function Advice({
         </summary>
         <div className="guide-submenu-content">
           <p>{response.introduction}</p>
+          {response.diagnostics && <details><summary>Diagnostic IA</summary><p>{response.diagnostics.provider} · {response.diagnostics.model}{response.diagnostics.fallback ? ` · Secours : ${response.diagnostics.fallback}` : ""}</p></details>}
+          {response.engine === "external" && <p>Guide IA · {response.seconds} s · extraits du dossier. Vérifiez les sources.</p>}
           {response.engine === "local" && <p>Modèle local · {response.seconds} s · extraits du dossier, sans source de droit validée.</p>}
           {response.truncated && <p>Réponse limitée en longueur. Vous pouvez poser une question plus ciblée.</p>}
         </div>

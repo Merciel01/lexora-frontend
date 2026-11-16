@@ -16,6 +16,70 @@
     }
   ],
   "paths": {
+    "/trials/{id}/cancel-generation": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "clientMessageId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "clientMessageId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Annulation coopérative du propriétaire",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "cancelled"
+                  ],
+                  "properties": {
+                    "cancelled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expirée"
+          },
+          "403": {
+            "description": "CSRF ou accès refusé"
+          },
+          "404": {
+            "description": "Audience inexistante ou autre propriétaire"
+          }
+        }
+      }
+    },
     "/preferences": {
       "get": {
         "responses": {
@@ -1140,6 +1204,83 @@
                   "hasDecision": {
                     "type": "boolean"
                   },
+                  "generationDiagnostics": {
+                    "type": "object",
+                    "properties": {
+                      "provider": {
+                        "type": "string",
+                        "enum": [
+                          "groq",
+                          "local"
+                        ]
+                      },
+                      "model": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "fallback": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 80
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "attempts": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "total_ms": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "generation_ms": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "context_selection_ms": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "first_content_ms": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "usage": {
+                        "type": "object",
+                        "properties": {
+                          "prompt_tokens": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "completion_tokens": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "total_tokens": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "provider",
+                      "model"
+                    ],
+                    "additionalProperties": false
+                  },
                   "replyEngine": {
                     "type": "string",
                     "enum": [
@@ -1341,6 +1482,83 @@
                   "trialId": {
                     "type": "string"
                   },
+                  "generationDiagnostics": {
+                    "type": "object",
+                    "properties": {
+                      "provider": {
+                        "type": "string",
+                        "enum": [
+                          "groq",
+                          "local"
+                        ]
+                      },
+                      "model": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "fallback": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 80
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "attempts": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "total_ms": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "generation_ms": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "context_selection_ms": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "first_content_ms": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "usage": {
+                        "type": "object",
+                        "properties": {
+                          "prompt_tokens": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "completion_tokens": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "total_tokens": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "provider",
+                      "model"
+                    ],
+                    "additionalProperties": false
+                  },
                   "judgment": {
                     "type": "string"
                   },
@@ -1366,6 +1584,7 @@
                         "type": "string",
                         "enum": [
                           "local",
+                          "external",
                           "scripted"
                         ]
                       },
@@ -1603,6 +1822,83 @@
           }
         ]
       },
+      "generationDiagnosticsSchema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "groq",
+              "local"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "fallback": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attempts": {
+            "type": "number",
+            "minimum": 0
+          },
+          "total_ms": {
+            "type": "number",
+            "minimum": 0
+          },
+          "generation_ms": {
+            "type": "number",
+            "minimum": 0
+          },
+          "context_selection_ms": {
+            "type": "number",
+            "minimum": 0
+          },
+          "first_content_ms": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "prompt_tokens": {
+                "type": "number",
+                "minimum": 0
+              },
+              "completion_tokens": {
+                "type": "number",
+                "minimum": 0
+              },
+              "total_tokens": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "provider",
+          "model"
+        ],
+        "additionalProperties": false
+      },
       "guideIntentSchema": {
         "type": "string",
         "enum": [
@@ -1700,10 +1996,88 @@
       "guideResponseSchema": {
         "type": "object",
         "properties": {
+          "diagnostics": {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": [
+                  "groq",
+                  "local"
+                ]
+              },
+              "model": {
+                "type": "string",
+                "maxLength": 120
+              },
+              "fallback": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "attempts": {
+                "type": "number",
+                "minimum": 0
+              },
+              "total_ms": {
+                "type": "number",
+                "minimum": 0
+              },
+              "generation_ms": {
+                "type": "number",
+                "minimum": 0
+              },
+              "context_selection_ms": {
+                "type": "number",
+                "minimum": 0
+              },
+              "first_content_ms": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "usage": {
+                "type": "object",
+                "properties": {
+                  "prompt_tokens": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "completion_tokens": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "total_tokens": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "provider",
+              "model"
+            ],
+            "additionalProperties": false
+          },
           "engine": {
             "type": "string",
             "enum": [
               "local",
+              "external",
               "predefined"
             ]
           },
@@ -2117,6 +2491,83 @@
           "hasDecision": {
             "type": "boolean"
           },
+          "generationDiagnostics": {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": [
+                  "groq",
+                  "local"
+                ]
+              },
+              "model": {
+                "type": "string",
+                "maxLength": 120
+              },
+              "fallback": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "attempts": {
+                "type": "number",
+                "minimum": 0
+              },
+              "total_ms": {
+                "type": "number",
+                "minimum": 0
+              },
+              "generation_ms": {
+                "type": "number",
+                "minimum": 0
+              },
+              "context_selection_ms": {
+                "type": "number",
+                "minimum": 0
+              },
+              "first_content_ms": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "usage": {
+                "type": "object",
+                "properties": {
+                  "prompt_tokens": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "completion_tokens": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "total_tokens": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "provider",
+              "model"
+            ],
+            "additionalProperties": false
+          },
           "replyEngine": {
             "type": "string",
             "enum": [
@@ -2192,6 +2643,83 @@
           "trialId": {
             "type": "string"
           },
+          "generationDiagnostics": {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": [
+                  "groq",
+                  "local"
+                ]
+              },
+              "model": {
+                "type": "string",
+                "maxLength": 120
+              },
+              "fallback": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "attempts": {
+                "type": "number",
+                "minimum": 0
+              },
+              "total_ms": {
+                "type": "number",
+                "minimum": 0
+              },
+              "generation_ms": {
+                "type": "number",
+                "minimum": 0
+              },
+              "context_selection_ms": {
+                "type": "number",
+                "minimum": 0
+              },
+              "first_content_ms": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "usage": {
+                "type": "object",
+                "properties": {
+                  "prompt_tokens": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "completion_tokens": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "total_tokens": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "provider",
+              "model"
+            ],
+            "additionalProperties": false
+          },
           "judgment": {
             "type": "string"
           },
@@ -2217,6 +2745,7 @@
                 "type": "string",
                 "enum": [
                   "local",
+                  "external",
                   "scripted"
                 ]
               },

@@ -58,6 +58,10 @@ export async function request<T>(
           throw new ApiError(response.status, [error.data.detail, ...messages.slice(0, 3)].filter(Boolean).join(" ").slice(0, 1000) || "Vérifiez les informations saisies.");
         }
       }
+      if(response.status===429 || response.status===503){
+        const detail=z.object({detail:z.string().max(1000)}).safeParse(await response.json().catch(()=>null));
+        if(detail.success)throw new ApiError(response.status,detail.data.detail);
+      }
       if (response.status === 401)
         window.dispatchEvent(new Event("lexora-session-expired"));
       throw new ApiError(
@@ -115,6 +119,7 @@ export const api: ApiClient = {
 };
 export const serverApi = {
   ...api,
+  cancelGeneration: (trialId:string,id:string)=>request(`/trials/${encodeURIComponent(trialId)}/cancel-generation`,z.object({cancelled:z.boolean()}),{method:"POST",body:json({clientMessageId:id})}),
   getPreferences: () => request("/preferences", preferencesSchema),
   savePreferences: (value: Preferences) => request("/preferences", preferencesSchema, { method: "PUT", body: json(value) }),
   getNotes: (caseId: string) => request(`/cases/${encodeURIComponent(caseId)}/notes`, noteSchema),

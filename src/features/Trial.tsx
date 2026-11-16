@@ -480,7 +480,7 @@ export function Trial() {
   function toggleAutomatic() {
     setDirectorStarted(true); setAutomatic(!automatic);
     if (!automatic) { setAudioError(""); soundRef.current = !serverMode || !!s?.ttsAvailable; setSound(soundRef.current); queue.current?.retry(); }
-    else { setSound(false); recorder.stop(true); }
+    else { setSound(false); recorder.stop(true); if(trial.busy)void trial.cancelGeneration(); }
   }
   function replayDecision() {
     if (!s?.currentAudio || audioBusy || playing) return;
@@ -670,11 +670,12 @@ export function Trial() {
             {s.objection && <strong className="objection">OBJECTION</strong>}
             <div className="scene-microphone" role="group" aria-label="Microphone dans la scène">
               {microphoneControl}
+              {trial.busy && <button className="button secondary" disabled={trial.cancelling} onClick={()=>{queue.current?.clear();void trial.cancelGeneration();}}>{trial.cancelling ? "Annulation…" : "Annuler la réponse"}</button>}
               {!s.finished && <button className="button secondary" disabled={!connected && !automatic} onClick={toggleAutomatic}>{automatic ? "Pause de la cour" : "Écouter la cour automatiquement"}</button>}
               {audioError && <button className="button secondary" onClick={() => { soundRef.current=true; setSound(true); setAudioError(""); queue.current?.retry(); }}>Relancer la voix</button>}
               <div className="scene-microphone-status" aria-live="polite">
                 <span>{recorder.recording ? "Enregistrement en cours" : trial.error ? "Action interrompue — réessayez ci-dessous" : trial.busy ? `${processingLabel} ${Math.max(0,Math.floor((now-(trial.processingSince ?? now))/1000))} s` : voiceAllowed ? recorder.status === "Microphone arrêté" ? "À vous de parler" : recorder.status : audioError ? "Lecture bloquée" : audioBusy && !playing ? "Préparation de la voix…" : playing ? "La cour parle" : !automatic ? "Lecture automatique arrêtée" : "La cour prépare la suite"}</span>
-                {trial.busy && <small>{s.step===5 ? "Délibération locale : jusqu’à 3 minutes. La pause arrête l’enchaînement ; le calcul se termine en arrière-plan." : "Calcul local en cours : jusqu’à 2 minutes."}</small>}
+                {trial.busy && <small>{s.step===5 ? "Délibération locale : jusqu’à 3 minutes. La pause demande aussi l’annulation du calcul en cours." : "Calcul local en cours : jusqu’à 2 minutes."}</small>}
                 {trial.error && <span role="alert">{trial.error} {connected ? <button className="button secondary" disabled={trial.busy} onClick={() => void trial.retry()}>Réessayer l’action</button> : <button className="button secondary" onClick={trial.reconnect}>Reconnecter la cour</button>}</span>}
                 {audioError && <small>{audioError}</small>}
                 {trial.busy && trial.progress?.text && <span className="reply-preview"><strong>Réponse provisoire</strong><br />{trial.progress.text}</span>}
@@ -775,13 +776,14 @@ export function Trial() {
             ? s.ttsAvailable ? "Voix serveur activée ; la transcription reste accessible." : "Voix serveur non activée. Les échanges texte sont disponibles."
             : "Voix locale de simulation, facultative. Aucune réponse IA réelle."}
           {serverMode && s.replyEngine === "local" && <><br />Réponses aux interventions : modèle local, à partir d’extraits du dossier. Sans source de droit validée.</>}
-          {serverMode && trial.busy && s.replyEngine === "local" && <><br />{s.step===5 ? "Le président prépare son verdict" : "La cour prépare sa réponse"} · {Math.max(0,Math.floor((now-(trial.processingSince ?? now))/1000))} s écoulées. Le calcul local peut prendre jusqu’à {s.step===5 ? "trois" : "deux"} minutes.</>}
+          {serverMode && trial.busy && (s.replyEngine === "local" || s.replyEngine === "external") && <><br />{s.step===5 ? "Le président prépare son verdict" : "La cour prépare sa réponse"} · {Math.max(0,Math.floor((now-(trial.processingSince ?? now))/1000))} s écoulées. Le traitement peut prendre jusqu’à {s.step===5 ? "trois" : "deux"} minutes.</>}
         </p>
         {playbackDelay !== undefined && (
           <small>Réception → lecture : {Math.round(playbackDelay)} ms{voiceRequestDelay!==undefined ? ` · Demande → voix : ${(voiceRequestDelay/1000).toFixed(1)} s` : ""}</small>
         )}
       </div>
       {trial.transcriptionMs!==undefined && <small>Transcription : {(trial.transcriptionMs/1000).toFixed(1)} s · </small>}
+      {s.generationDiagnostics && <details><summary>Diagnostic IA</summary><p>Fournisseur : {s.generationDiagnostics.provider} · Modèle : {s.generationDiagnostics.model}{s.generationDiagnostics.fallback ? ` · Secours : ${s.generationDiagnostics.fallback}` : ""}</p><p>Durée totale : {s.generationDiagnostics.total_ms!==undefined ? `${(s.generationDiagnostics.total_ms/1000).toFixed(1)} s` : "non disponible"} · Sélection des extraits : {s.generationDiagnostics.context_selection_ms!==undefined ? `${s.generationDiagnostics.context_selection_ms} ms` : "non disponible"} · Tokens entrée/sortie : {s.generationDiagnostics.usage?.prompt_tokens ?? "non disponibles"} / {s.generationDiagnostics.usage?.completion_tokens ?? "non disponibles"}</p></details>}
       {trial.firstTextMs!==undefined && <small>Premiers mots : {(trial.firstTextMs/1000).toFixed(1)} s{trial.responseMs!==undefined ? ` · Réponse prête : ${(trial.responseMs/1000).toFixed(1)} s` : ""}</small>}
       {audioError && (
         <div className="notice" role="status">
@@ -810,6 +812,7 @@ export function Trial() {
           </button>
         </div>
       )}
+      {trial.busy && (textMode||sceneError) && <button className="button secondary" disabled={trial.cancelling} onClick={()=>{queue.current?.clear();void trial.cancelGeneration();}}>{trial.cancelling ? "Annulation…" : "Annuler la réponse"}</button>}
       {trial.busy && trial.progress?.text && <section className="notice reply-preview" aria-label="Réponse en cours"><strong>Réponse provisoire — validation en cours</strong><p>{trial.progress.text}</p></section>}
       {!s.finished ? (
         <>

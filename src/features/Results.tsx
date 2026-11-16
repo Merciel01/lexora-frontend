@@ -108,7 +108,8 @@ export function VerdictView({
             </section>
             <section className="panel judgment">
               <h2>Jugement motivé</h2>
-              {verdict.decision && <Badge>Décision de simulation · {verdict.decision.engine === "local" ? "président virtuel" : "scénario prédéfini"}</Badge>}
+              {verdict.generationDiagnostics && <details><summary>Diagnostic IA</summary><p>{verdict.generationDiagnostics.provider} · {verdict.generationDiagnostics.model}{verdict.generationDiagnostics.fallback ? ` · Secours : ${verdict.generationDiagnostics.fallback}` : ""}</p></details>}
+              {verdict.decision && <Badge>Décision de simulation · {verdict.decision.engine !== "scripted" ? "président virtuel" : "scénario prédéfini"}</Badge>}
               {!verdict.decision && serverMode && <p className="notice">Cette ancienne audience ne contient pas de verdict motivé du président.</p>}
               <p>{verdict.judgment}</p>
               <h3>Issue du litige</h3>

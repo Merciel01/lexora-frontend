@@ -30,6 +30,8 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
   const [transcriptionMs,setTranscriptionMs]=useState<number>();
   const [responseMs,setResponseMs]=useState<number>();
   const requestStarted=useRef(0);
+  const activeRequest=useRef<string|undefined>(undefined);
+  const [cancelling,setCancelling]=useState(false);
   const firstReceived=useRef(false);
   const [busy, setBusy] = useState(false);
   const [processingSince, setProcessingSince] = useState<number>();
@@ -132,6 +134,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
     void realtime.connect();
     return () => {
       alive.current = false;
+      if(activeRequest.current)void serverApi.cancelGeneration(trialId,activeRequest.current).catch(()=>{});
       realtime.close();
       transport.current = undefined;
     };
@@ -143,6 +146,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
     if (inFlight.current || connection !== "ready" || !current.current)
       return false;
     inFlight.current = true;
+    activeRequest.current=id;setCancelling(false);
     requestStarted.current=Date.now();firstReceived.current=false;setFirstTextMs(undefined);setResponseMs(undefined);setTranscriptionMs(undefined);setProgress(undefined);
     setBusy(true);
     setProcessingSince(Date.now());
@@ -180,6 +184,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
       }
       return false;
     } finally {
+      activeRequest.current=undefined;setCancelling(false);
       inFlight.current = false;
       if (alive.current) {setBusy(false);setProgress(undefined);}
     }
@@ -187,6 +192,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
   async function sendAudio(blob: Blob, id: string = crypto.randomUUID()) {
     if (!serverMode || inFlight.current || connection !== "ready") return;
     inFlight.current = true;
+    activeRequest.current=id;setCancelling(false);
     requestStarted.current=Date.now();firstReceived.current=false;setFirstTextMs(undefined);setResponseMs(undefined);setTranscriptionMs(undefined);setProgress(undefined);
     setError("");
     try {
@@ -204,9 +210,16 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
         setAudioFailed({ blob, id });
       }
     } finally {
+      activeRequest.current=undefined;setCancelling(false);
       inFlight.current = false;
       if (alive.current) {setBusy(false);setProgress(undefined);}
     }
+  }
+  async function cancelGeneration(){
+    if(!serverMode || !activeRequest.current)return;
+    setCancelling(true);
+    try{const result=await serverApi.cancelGeneration(trialId,activeRequest.current);if(!result.cancelled)setCancelling(false);}
+    catch{if(alive.current){setError("Annulation non confirmée. Réessayez.");setCancelling(false);}}
   }
   function disconnect() {
     setError("Connexion démo interrompue. Votre brouillon est conservé.");
@@ -223,6 +236,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
   }
   return {
     snapshot,
+    cancelGeneration,cancelling,
     connection,
     error,
     busy,

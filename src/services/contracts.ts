@@ -83,11 +83,13 @@ export const citationSchema = z.object({
   url: z.string().optional(),
   version: z.string().optional(),
 });
+export const generationDiagnosticsSchema=z.object({provider:z.enum(['groq','local']),model:z.string().max(120),fallback:z.string().max(80).nullable().optional(),attempts:z.number().nonnegative().optional(),total_ms:z.number().nonnegative().optional(),generation_ms:z.number().nonnegative().optional(),context_selection_ms:z.number().nonnegative().optional(),first_content_ms:z.number().nonnegative().nullable().optional(),usage:z.object({prompt_tokens:z.number().nonnegative().optional(),completion_tokens:z.number().nonnegative().optional(),total_tokens:z.number().nonnegative().optional()}).optional()});
 export const verdictSchema = z.object({
   trialId: z.string(),
+  generationDiagnostics:generationDiagnosticsSchema.optional(),
   judgment: z.string(),
   outcome: z.string(),
-  decision: z.object({code:z.string(),motivation:z.string(),evidenceIds:z.array(z.string()),engine:z.enum(["local","scripted"]),scope:z.string().optional()}).optional(),
+  decision: z.object({code:z.string(),motivation:z.string(),evidenceIds:z.array(z.string()),engine:z.enum(["local","external","scripted"]),scope:z.string().optional()}).optional(),
   resultVersion: z.number().optional(),
   score: z.number().min(0).max(100),
   criteria: z.array(criterionSchema),
@@ -124,6 +126,7 @@ export const snapshotSchema = z.object({
   audioCodecs: z.array(z.string()).default([]),
   ttsAvailable: z.boolean().default(false),
   hasDecision: z.boolean().optional(),
+  generationDiagnostics:generationDiagnosticsSchema.optional(),
   replyEngine: z.enum(["local", "external", "scripted"]).optional(),
   currentAudio: z.object({turnId:z.string(),speaker:z.enum(speakerIds),url:z.string()}).optional(),
   startedAt: z.string(),
@@ -230,7 +233,8 @@ export const guideRequestSchema = z.object({
   history: z.array(guideMessageSchema).max(12),
 });
 export const guideResponseSchema = z.object({
-  engine: z.enum(["local", "predefined"]).optional(),
+  diagnostics:generationDiagnosticsSchema.optional(),
+  engine: z.enum(["local", "external", "predefined"]).optional(),
   seconds: z.number().nonnegative().optional(),
   truncated: z.boolean().optional(),
   id: z.string().min(1).max(100),
