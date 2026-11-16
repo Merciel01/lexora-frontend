@@ -17,6 +17,7 @@ import {
 import {
   ServerTrialTransport,
   type ConnectionState,
+  type ProcessingUpdate,
   type Command,
 } from "../../services/realtime";
 export function useTrial(onEvent?: (event: TrialEvent) => void) {
@@ -24,6 +25,12 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
   const [snapshot, setSnapshot] = useState<Snapshot>();
   const [connection, setConnection] = useState<ConnectionState>("connecting");
   const [error, setError] = useState("");
+  const [progress,setProgress]=useState<ProcessingUpdate>();
+  const [firstTextMs,setFirstTextMs]=useState<number>();
+  const [transcriptionMs,setTranscriptionMs]=useState<number>();
+  const [responseMs,setResponseMs]=useState<number>();
+  const requestStarted=useRef(0);
+  const firstReceived=useRef(false);
   const [busy, setBusy] = useState(false);
   const [processingSince, setProcessingSince] = useState<number>();
   const inFlight = useRef(false);
@@ -62,6 +69,13 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
       trialId,
       () => serverApi.getTrial(trialId),
       {
+        onProgress: update=>{
+          if(!alive.current)return;
+          setProgress(update);
+          if(update.stage==='transcription_done')setTranscriptionMs(update.elapsedMs);
+          if(update.text && !firstReceived.current){firstReceived.current=true;setFirstTextMs(Date.now()-requestStarted.current);}
+          if(update.stage==='complete')setResponseMs(Date.now()-requestStarted.current);
+        },
         onState: (s) => {
           if (alive.current) setConnection(s);
         },
@@ -129,6 +143,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
     if (inFlight.current || connection !== "ready" || !current.current)
       return false;
     inFlight.current = true;
+    requestStarted.current=Date.now();firstReceived.current=false;setFirstTextMs(undefined);setResponseMs(undefined);setTranscriptionMs(undefined);setProgress(undefined);
     setBusy(true);
     setProcessingSince(Date.now());
     setError("");
@@ -166,12 +181,13 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
       return false;
     } finally {
       inFlight.current = false;
-      if (alive.current) setBusy(false);
+      if (alive.current) {setBusy(false);setProgress(undefined);}
     }
   }
   async function sendAudio(blob: Blob, id: string = crypto.randomUUID()) {
     if (!serverMode || inFlight.current || connection !== "ready") return;
     inFlight.current = true;
+    requestStarted.current=Date.now();firstReceived.current=false;setFirstTextMs(undefined);setResponseMs(undefined);setTranscriptionMs(undefined);setProgress(undefined);
     setError("");
     try {
       setBusy(true);
@@ -189,7 +205,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
       }
     } finally {
       inFlight.current = false;
-      if (alive.current) setBusy(false);
+      if (alive.current) {setBusy(false);setProgress(undefined);}
     }
   }
   function disconnect() {
@@ -211,6 +227,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
     error,
     busy,
     processingSince,
+    progress,firstTextMs,responseMs,transcriptionMs,
     failed,
     send,
     sendAudio,

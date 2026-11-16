@@ -32,6 +32,11 @@ test('réponse locale réelle dans une audience sans fournisseur externe',async(
   const started=Date.now();
   await page.getByRole('button',{name:'Envoyer',exact:true}).click();
   await expect(page.getByText(/La cour prépare sa réponse/)).toBeVisible();
+  await expect(page.getByRole('region',{name:'Réponse en cours',exact:true})).toBeVisible({timeout:150000});
+  const previewSeconds=(Date.now()-started)/1000;
+  if(process.env.LEXORA_TEST_ROOM==='1')await page.locator('.court-scene').screenshot({path:'test-results/local-court-streaming.png'});
+  expect((await state()).entries.filter((e:{speaker:string})=>e.speaker==='Vous')).toHaveLength(0);
+
   if(process.env.LEXORA_TEST_ROOM==='1'){
     await page.waitForTimeout(2100);
     await expect(page.getByRole('group',{name:'Microphone dans la scène',exact:true})).toContainText(/Traitement de votre intervention… \d+ s/);
@@ -45,7 +50,7 @@ test('réponse locale réelle dans une audience sans fournisseur externe',async(
   const displayed=page.locator('.transcript-panel').getByText(answer,{exact:true});
   await expect(displayed).toBeVisible();
   await displayed.scrollIntoViewIfNeeded();
-  await writeFile('test-results/local-court-answer.json',JSON.stringify({caseId:final.caseId,engine:final.replyEngine,elapsedSeconds:(Date.now()-started)/1000,answer},null,2));
+  await writeFile('test-results/local-court-answer.json',JSON.stringify({caseId:final.caseId,engine:final.replyEngine,previewSeconds,elapsedSeconds:(Date.now()-started)/1000,answer},null,2));
   await test.info().attach('réponse-locale',{body:JSON.stringify({caseId:final.caseId,engine:final.replyEngine,answer}),contentType:'application/json'});
   await page.screenshot({path:'test-results/local-court.png',fullPage:true});
   if(process.env.LEXORA_TEST_ROOM==='1'){

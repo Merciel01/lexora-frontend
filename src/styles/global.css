@@ -2711,3 +2711,5 @@ summary {
 }
 
 .scene-microphone { flex-wrap: wrap; }
+
+.scene-microphone-status .reply-preview { max-width: 560px; max-height: 9em; overflow-y: auto; line-height: 1.45; }

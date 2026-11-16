@@ -228,6 +228,7 @@ export function Trial() {
   const [pageVisible, setPageVisible] = useState(!document.hidden);
   const remoteTurns = useRef(new Set<string>());
   const [turnSpeaking, setTurnSpeaking] = useState(false);
+  const [voiceRequestDelay,setVoiceRequestDelay]=useState<number>();
   const [playbackDelay, setPlaybackDelay] = useState<number>();
   const queue = useRef<PlaybackQueue | null>(null);
   if (!queue.current)
@@ -289,6 +290,7 @@ export function Trial() {
         url,
         () => {
           setPlaybackDelay(performance.now() - received);
+          if(trial.processingSince)setVoiceRequestDelay(Date.now()-trial.processingSince);
           setPlaying(true);
         },
         level => { if (live.current) setMouthLevel(level); },
@@ -309,6 +311,7 @@ export function Trial() {
   const trial = useTrial(receive);
   const s = trial.snapshot;
   const connected = trial.connection === "ready";
+  useEffect(()=>{setVoiceRequestDelay(undefined);setPlaybackDelay(undefined);},[trial.processingSince]);
   const recorder = useRecorder(
     (blob) => {
       if (serverMode) void trial.sendAudio(blob);
@@ -674,6 +677,8 @@ export function Trial() {
                 {trial.busy && <small>{s.step===5 ? "Délibération locale : jusqu’à 3 minutes. La pause arrête l’enchaînement ; le calcul se termine en arrière-plan." : "Calcul local en cours : jusqu’à 2 minutes."}</small>}
                 {trial.error && <span role="alert">{trial.error} {connected ? <button className="button secondary" disabled={trial.busy} onClick={() => void trial.retry()}>Réessayer l’action</button> : <button className="button secondary" onClick={trial.reconnect}>Reconnecter la cour</button>}</span>}
                 {audioError && <small>{audioError}</small>}
+                {trial.busy && trial.progress?.text && <span className="reply-preview"><strong>Réponse provisoire</strong><br />{trial.progress.text}</span>}
+                {trial.busy && trial.progress?.stage==='transcription' && <small>Transcription du microphone…</small>}
                 {recorder.recording && <meter aria-label="Niveau du microphone dans la scène" min={0} max={100} value={recorder.level} />}
               </div>
             </div>
@@ -773,9 +778,11 @@ export function Trial() {
           {serverMode && trial.busy && s.replyEngine === "local" && <><br />{s.step===5 ? "Le président prépare son verdict" : "La cour prépare sa réponse"} · {Math.max(0,Math.floor((now-(trial.processingSince ?? now))/1000))} s écoulées. Le calcul local peut prendre jusqu’à {s.step===5 ? "trois" : "deux"} minutes.</>}
         </p>
         {playbackDelay !== undefined && (
-          <small>Réception → lecture : {Math.round(playbackDelay)} ms</small>
+          <small>Réception → lecture : {Math.round(playbackDelay)} ms{voiceRequestDelay!==undefined ? ` · Demande → voix : ${(voiceRequestDelay/1000).toFixed(1)} s` : ""}</small>
         )}
       </div>
+      {trial.transcriptionMs!==undefined && <small>Transcription : {(trial.transcriptionMs/1000).toFixed(1)} s · </small>}
+      {trial.firstTextMs!==undefined && <small>Premiers mots : {(trial.firstTextMs/1000).toFixed(1)} s{trial.responseMs!==undefined ? ` · Réponse prête : ${(trial.responseMs/1000).toFixed(1)} s` : ""}</small>}
       {audioError && (
         <div className="notice" role="status">
           {audioError}
@@ -803,6 +810,7 @@ export function Trial() {
           </button>
         </div>
       )}
+      {trial.busy && trial.progress?.text && <section className="notice reply-preview" aria-label="Réponse en cours"><strong>Réponse provisoire — validation en cours</strong><p>{trial.progress.text}</p></section>}
       {!s.finished ? (
         <>
           <form

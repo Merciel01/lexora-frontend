@@ -11,7 +11,9 @@ export type Command =
   | { type: "user_text"; text: string }
   | { type: "present_exhibit"; exhibitId: string }
   | { type: "continue" };
+export type ProcessingUpdate = {stage:"transcription"|"transcription_done"|"generation"|"complete";text?:string;elapsedMs:number};
 export type TransportCallbacks = {
+  onProgress?: (update:ProcessingUpdate)=>void;
   onState: (s: ConnectionState) => void;
   onSnapshot: (s: Snapshot) => void;
   onEvent: (e: TrialEvent) => void;
@@ -131,6 +133,15 @@ export class ServerTrialTransport {
     try {
       data = JSON.parse(raw);
     } catch {
+      return;
+    }
+    if(data && typeof data==='object' && 'type' in data && data.type==='processing') {
+      const p=data as Record<string,unknown>;
+      if(typeof p.clientMessageId==='string' && this.pending.has(p.clientMessageId) &&
+        ['transcription','transcription_done','generation','complete'].includes(String(p.stage)) &&
+        typeof p.elapsedMs==='number' && Number.isFinite(p.elapsedMs) && p.elapsedMs>=0 &&
+        (p.text===undefined || typeof p.text==='string' && p.text.length<=2000))
+        this.cb.onProgress?.({stage:p.stage as ProcessingUpdate['stage'],text:p.text as string|undefined,elapsedMs:p.elapsedMs});
       return;
     }
     const ack = ackSchema.safeParse(data);
