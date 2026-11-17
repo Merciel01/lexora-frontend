@@ -12,7 +12,9 @@ test('Groq simulé : guide, streaming, annulation, poursuite et verdict',async({
  await page.goto(`/app/trials/${trial.id}`);await expect(page.getByText('CONNECTÉ À DJANGO')).toBeVisible();
  for(const step of [1,2]){await page.getByRole('button',{name:'Écouter la cour',exact:true}).click();await expect.poll(async()=> (await state()).step).toBe(step);}
  await page.getByLabel('Votre argumentation').fill('ANNULATION_TEST Je souhaite examiner les pièces.');await page.getByRole('button',{name:'Envoyer',exact:true}).click();
- await expect(page.getByRole('region',{name:'Réponse en cours',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Annuler la réponse',exact:true})).toBeVisible();
+ // Structured proposals stay private until validated; cancellation remains available.
+ await expect(page.getByRole('region',{name:'Réponse en cours',exact:true})).toBeHidden();
  await page.getByRole('button',{name:'Annuler la réponse',exact:true}).click();
  await expect(page.getByRole('region',{name:'Réponse en cours',exact:true})).toBeHidden();
  expect((await state()).entries.filter((e:{speaker:string})=>e.speaker==='Vous')).toHaveLength(0);
