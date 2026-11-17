@@ -9,7 +9,7 @@ import {
   savePreferences,
   type Preferences as PreferencesType,
 } from "../services/preferences";
-import { Heading, CourtArt } from "../components/Layout";
+import { Heading } from "../components/Layout";
 export function Preferences() {
   const queryClient = useQueryClient();
   const me = useQuery({
@@ -314,7 +314,7 @@ export function Auth({
             se travaille.
           </h1>
           <p>Préparez. Plaidez. Progressez.</p>
-          <CourtArt />
+          <img className="auth-scene" src={`${import.meta.env.BASE_URL}images/lexora-courtroom-home.webp`} alt="La salle d’audience LEXORA et ses participants" width={1200} height={675} />
           <small>Votre terrain d’entraînement au raisonnement juridique.</small>
         </section>
         <section className="auth-form panel">

@@ -53,6 +53,10 @@ const body = (properties) => ({
   },
 });
 const paths = {
+  "/trials/{id}/cancel-generation": {
+    parameters: [{name:"id",in:"path",required:true,schema:{type:"string",format:"uuid"}}],
+    post: {requestBody:body({clientMessageId:{type:"string",minLength:1,maxLength:128}}),responses:{200:{description:"Annulation coopérative du propriétaire",content:{"application/json":{schema:{type:"object",required:["cancelled"],properties:{cancelled:{type:"boolean"}}}}}},401:{description:"Session expirée"},403:{description:"CSRF ou accès refusé"},404:{description:"Audience inexistante ou autre propriétaire"}}}
+  },
   "/preferences": { get: operation("preferencesSchema"), put: operation("preferencesSchema", { requestBody: { required: true, content: { "application/json": { schema: ref("preferencesSchema") } } } }) },
   "/cases/{id}/notes": { parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], get: operation("noteSchema"), put: operation("noteSchema", { requestBody: body({ text: { type: "string", maxLength: 10000 } }) }) },
   "/auth/csrf": {
@@ -130,6 +134,26 @@ const paths = {
       { name: "id", in: "path", required: true, schema: { type: "string" } },
     ],
     get: operation("caseSchema"),
+  },
+  "/cases/{id}/guide": {
+    parameters: [
+      { name: "id", in: "path", required: true, schema: { type: "string" } },
+    ],
+    post: operation("guideResponseSchema", {
+      summary: "Guide pédagogique contextualisé — proposition à valider",
+      parameters: [
+        {
+          name: "X-CSRFToken",
+          in: "header",
+          required: true,
+          schema: { type: "string" },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: { "application/json": { schema: ref("guideRequestSchema") } },
+      },
+    }),
   },
   "/trials": {
     get: {

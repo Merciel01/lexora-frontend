@@ -27,16 +27,20 @@ export async function request<T>(
   path: string,
   schema: z.ZodType<T>,
   options: RequestInit = {},
+  timeoutMs = 20000,
 ): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const cancel = () => controller.abort();
+  options.signal?.addEventListener("abort", cancel, { once: true });
+  if (options.signal?.aborted) controller.abort();
   const method = options.method || "GET";
   try {
     if (method !== "GET" && !csrf) await serverApi.csrf();
     const response = await fetch(base + path, {
       ...options,
       credentials: "include",
-      signal: options.signal || controller.signal,
+      signal: controller.signal,
       headers: {
         Accept: "application/json",
         ...(options.body ? { "Content-Type": "application/json" } : {}),
@@ -53,6 +57,10 @@ export async function request<T>(
           const messages = Array.isArray(error.data.errors) ? error.data.errors : Object.values(error.data.errors || {}).flat();
           throw new ApiError(response.status, [error.data.detail, ...messages.slice(0, 3)].filter(Boolean).join(" ").slice(0, 1000) || "Vérifiez les informations saisies.");
         }
+      }
+      if(response.status===429 || response.status===503){
+        const detail=z.object({detail:z.string().max(1000)}).safeParse(await response.json().catch(()=>null));
+        if(detail.success)throw new ApiError(response.status,detail.data.detail);
       }
       if (response.status === 401)
         window.dispatchEvent(new Event("lexora-session-expired"));
@@ -80,6 +88,7 @@ export async function request<T>(
     );
   } finally {
     clearTimeout(timer);
+    options.signal?.removeEventListener("abort", cancel);
   }
 }
 const empty = z.union([z.void(), z.object({ detail: z.string().optional() })]);
@@ -110,6 +119,7 @@ export const api: ApiClient = {
 };
 export const serverApi = {
   ...api,
+  cancelGeneration: (trialId:string,id:string)=>request(`/trials/${encodeURIComponent(trialId)}/cancel-generation`,z.object({cancelled:z.boolean()}),{method:"POST",body:json({clientMessageId:id})}),
   getPreferences: () => request("/preferences", preferencesSchema),
   savePreferences: (value: Preferences) => request("/preferences", preferencesSchema, { method: "PUT", body: json(value) }),
   getNotes: (caseId: string) => request(`/cases/${encodeURIComponent(caseId)}/notes`, noteSchema),

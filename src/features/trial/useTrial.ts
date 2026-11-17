@@ -17,6 +17,7 @@ import {
 import {
   ServerTrialTransport,
   type ConnectionState,
+  type ProcessingUpdate,
   type Command,
 } from "../../services/realtime";
 export function useTrial(onEvent?: (event: TrialEvent) => void) {
@@ -24,7 +25,16 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
   const [snapshot, setSnapshot] = useState<Snapshot>();
   const [connection, setConnection] = useState<ConnectionState>("connecting");
   const [error, setError] = useState("");
+  const [progress,setProgress]=useState<ProcessingUpdate>();
+  const [firstTextMs,setFirstTextMs]=useState<number>();
+  const [transcriptionMs,setTranscriptionMs]=useState<number>();
+  const [responseMs,setResponseMs]=useState<number>();
+  const requestStarted=useRef(0);
+  const activeRequest=useRef<string|undefined>(undefined);
+  const [cancelling,setCancelling]=useState(false);
+  const firstReceived=useRef(false);
   const [busy, setBusy] = useState(false);
+  const [processingSince, setProcessingSince] = useState<number>();
   const inFlight = useRef(false);
   const [audioFailed, setAudioFailed] = useState<{ blob: Blob; id: string }>();
   const [failed, setFailed] = useState<{ command: Command; id: string }>();
@@ -61,6 +71,13 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
       trialId,
       () => serverApi.getTrial(trialId),
       {
+        onProgress: update=>{
+          if(!alive.current)return;
+          setProgress(update);
+          if(update.stage==='transcription_done')setTranscriptionMs(update.elapsedMs);
+          if(update.text && !firstReceived.current){firstReceived.current=true;setFirstTextMs(Date.now()-requestStarted.current);}
+          if(update.stage==='complete')setResponseMs(Date.now()-requestStarted.current);
+        },
         onState: (s) => {
           if (alive.current) setConnection(s);
         },
@@ -86,8 +103,9 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
                   ...previous.entries,
                   {
                     id: event.eventId,
-                    speaker: speakerLabels[event.speaker],
+                    speaker: event.speakerLabel || speakerLabels[event.speaker],
                     text: event.text,
+                    citations: event.citations,
                   },
                 ].slice(-2000),
               };
@@ -117,6 +135,7 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
     void realtime.connect();
     return () => {
       alive.current = false;
+      if(activeRequest.current)void serverApi.cancelGeneration(trialId,activeRequest.current).catch(()=>{});
       realtime.close();
       transport.current = undefined;
     };
@@ -128,7 +147,10 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
     if (inFlight.current || connection !== "ready" || !current.current)
       return false;
     inFlight.current = true;
+    activeRequest.current=id;setCancelling(false);
+    requestStarted.current=Date.now();firstReceived.current=false;setFirstTextMs(undefined);setResponseMs(undefined);setTranscriptionMs(undefined);setProgress(undefined);
     setBusy(true);
+    setProcessingSince(Date.now());
     setError("");
     try {
       if (serverMode) await transport.current!.send(command, id);
@@ -163,16 +185,20 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
       }
       return false;
     } finally {
+      activeRequest.current=undefined;setCancelling(false);
       inFlight.current = false;
-      if (alive.current) setBusy(false);
+      if (alive.current) {setBusy(false);setProgress(undefined);}
     }
   }
   async function sendAudio(blob: Blob, id: string = crypto.randomUUID()) {
     if (!serverMode || inFlight.current || connection !== "ready") return;
     inFlight.current = true;
+    activeRequest.current=id;setCancelling(false);
+    requestStarted.current=Date.now();firstReceived.current=false;setFirstTextMs(undefined);setResponseMs(undefined);setTranscriptionMs(undefined);setProgress(undefined);
     setError("");
     try {
       setBusy(true);
+      setProcessingSince(Date.now());
       await transport.current?.sendAudio(
         blob,
         id,
@@ -185,9 +211,16 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
         setAudioFailed({ blob, id });
       }
     } finally {
+      activeRequest.current=undefined;setCancelling(false);
       inFlight.current = false;
-      if (alive.current) setBusy(false);
+      if (alive.current) {setBusy(false);setProgress(undefined);}
     }
+  }
+  async function cancelGeneration(){
+    if(!serverMode || !activeRequest.current)return;
+    setCancelling(true);
+    try{const result=await serverApi.cancelGeneration(trialId,activeRequest.current);if(!result.cancelled)setCancelling(false);}
+    catch{if(alive.current){setError("Annulation non confirmée. Réessayez.");setCancelling(false);}}
   }
   function disconnect() {
     setError("Connexion démo interrompue. Votre brouillon est conservé.");
@@ -204,9 +237,12 @@ export function useTrial(onEvent?: (event: TrialEvent) => void) {
   }
   return {
     snapshot,
+    cancelGeneration,cancelling,
     connection,
     error,
     busy,
+    processingSince,
+    progress,firstTextMs,responseMs,transcriptionMs,
     failed,
     send,
     sendAudio,

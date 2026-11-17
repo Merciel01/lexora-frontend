@@ -4,7 +4,7 @@ import {
   Award,
   BookOpen,
 } from "lucide-react";
-import { Heading, Action, Badge, CourtArt } from "../components/Layout";
+import { Heading, Action, Badge } from "../components/Layout";
 import { getDemoProfile, getSessions, getDemoCase } from "../services/demo";
 import { serverMode } from "../services/api";
 import type { Profile, TrialHistory } from "../services/contracts";
@@ -26,7 +26,7 @@ export default function Home({
         title="Votre prochaine plaidoirie commence ici."
         description="Entraînez votre raisonnement, votre éloquence et votre maîtrise du droit."
       />
-      <section className="hero">
+      <section className="hero hero--courtroom">
         <div>
           <span className="eyebrow">APPRENDRE EN PRATIQUANT</span>
           <h2>
@@ -39,7 +39,15 @@ export default function Home({
           </p>
           <Action to="/app/simulation/role">Commencer une simulation</Action>
         </div>
-        <CourtArt />
+        <figure className="home-courtroom">
+          <img
+            src={`${import.meta.env.BASE_URL}images/lexora-courtroom-home.webp`}
+            alt="La salle d’audience virtuelle Lexora, ses intervenants et le drapeau de la RDC."
+            width={2069}
+            height={760}
+            fetchPriority="high"
+          />
+        </figure>
       </section>
       <div className="stats-grid">
         {(

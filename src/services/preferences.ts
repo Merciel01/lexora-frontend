@@ -10,7 +10,7 @@ export const defaults: Preferences = {
   quality: "auto",
   localVoice: false,
   voiceUri: "",
-  captureMode: "hold",
+  captureMode: "toggle",
 };
 export function getPreferences(): Preferences {
   const value = preferencesSchema.safeParse(read("preferences", defaults));

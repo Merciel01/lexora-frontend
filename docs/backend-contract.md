@@ -87,3 +87,7 @@ TTS : URL de phrase servie sur la même origine, `sentenceIndex` contigu à part
 ## Vérification commune restante
 
 Authentification réelle, CSRF, CORS/HTTPS/WSS, tri et pagination d’historique volumineux, droits sur les pièces, races snapshot/événements, formats audio, expiration, idempotence serveur, attribution des XP et exactitude des citations. Les tests Playwright `server.spec.ts` exercent le contrat proposé avec REST et WebSocket simulés ; ils ne remplacent pas un test Django.
+
+## Guide pédagogique de préparation
+
+Proposition supplémentaire : `POST /cases/:id/guide`, avec cookies/CSRF, requête idempotente et réponse structurée. Le contexte juridique et les droits restent sous l’autorité Django ; aucune clé IA côté frontend. Voir [le guide d’intégration détaillé](preparation-guide.md) et les schémas `guideRequestSchema` / `guideResponseSchema` dans l’OpenAPI proposé. Le mode démo utilise exclusivement des conseils prédéfinis explicitement signalés.

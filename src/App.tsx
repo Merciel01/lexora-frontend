@@ -15,6 +15,7 @@ import {
   ServerProgress,
 } from "./features/ServerWorkspace";
 import NotFound from "./features/NotFound";
+import LocalModel from "./features/LocalModel";
 class ErrorBoundary extends Component<
   { children: ReactNode },
   { failed: boolean }
@@ -78,6 +79,7 @@ export default function App() {
           element={serverMode ? <ServerProgress /> : <Progress />}
         />
         <Route path="settings" element={<Preferences />} />
+        <Route path="local-model" element={<LocalModel />} />
         <Route
           path="forbidden"
           element={

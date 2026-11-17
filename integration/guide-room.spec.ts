@@ -1,0 +1,56 @@
+import {test,expect} from '@playwright/test';
+
+test('guide contextualisé réel et reprise de la salle 3D', async ({page})=>{
+  test.skip(process.env.LEXORA_TEST_LOCAL_LLM!=='1','Recette CPU explicite uniquement');
+  test.setTimeout(240000);
+  const errors:string[]=[]; page.on('pageerror',e=>errors.push(e.message));
+  const email=`guide-${Date.now()}@lexora.test`, password='GuideRecipe!928461';
+  await page.goto('/register');
+  await page.getByLabel('Nom complet').fill('Recette guide et salle');
+  await page.getByLabel('Adresse e-mail').fill(email);
+  await page.getByLabel('Mot de passe',{exact:true}).fill(password);
+  await page.getByLabel('Confirmer le mot de passe').fill(password);
+  await page.getByRole('button',{name:'Créer mon compte'}).click();
+  await expect(page.getByText('Compte créé. Vous pouvez maintenant vous connecter à LEXORA.')).toBeVisible();
+  await page.goto('/login');
+  await page.getByLabel('Adresse e-mail').fill(email);
+  await page.getByLabel('Mot de passe',{exact:true}).fill(password);
+  await page.getByRole('button',{name:'Se connecter',exact:true}).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await page.getByRole('link',{name:'Commencer une simulation'}).click();
+  await page.getByRole('link',{name:'Choisir un dossier'}).click();
+  await page.getByRole('link',{name:'Consulter le dossier'}).first().click();
+  await page.getByRole('button',{name:'Poser une question',exact:true}).click();
+  await page.getByLabel('Votre question de préparation').fill('Quels faits précis de ce dossier dois-je vérifier avant de défendre mon client ?');
+  const reply=page.waitForResponse(r=>r.url().endsWith('/guide') && r.request().method()==='POST',{timeout:150000});
+  await page.getByRole('button',{name:'Demander au guide',exact:true}).click();
+  const response=await reply; expect(response.status(),await response.text()).toBe(200);
+  const result=await response.json(); expect(result.engine).toBe('local'); expect(result.seconds).toBeGreaterThan(0);
+  expect(result.steps[0].detail.length).toBeGreaterThan(30); expect(result.citations).toEqual([]);
+  await page.getByText('Conseils de préparation',{exact:true}).click();
+  await expect(page.getByText(result.steps[0].detail,{exact:true})).toBeVisible();
+  await page.screenshot({path:'test-results/guide-local-real.png',fullPage:true});
+  await page.getByRole('link',{name:'Vérifier mon équipement'}).click();
+  await page.getByRole('button',{name:'Entrer dans la salle'}).click();
+  await page.getByRole('button',{name:'Voir la salle 3D'}).click();
+  await expect(page.frameLocator('iframe[title="Salle d’audience 3D Lexora"]').locator('canvas')).toBeVisible();
+  await expect(page.locator('.courtroom-loading')).toBeHidden({timeout:90000});
+  await expect(page.getByText('La scène 3D n’est pas disponible.',{exact:true})).toHaveCount(0);
+  let frame=page.frames().find(f=>f.url().includes('/courtroom/index.html?embed=1'))!;
+  expect(await frame.evaluate('results.loaded.length')).toBe(9);
+  // Nonessential resource errors must not destroy a working scene.
+  await frame.evaluate(()=>{const img=document.createElement('img'); img.dispatchEvent(new Event('error',{bubbles:true}));});
+  await expect(page.frameLocator('iframe[title="Salle d’audience 3D Lexora"]').locator('canvas')).toBeVisible();
+  // Simulate a real graphics-context loss and recover without leaving the trial.
+  await frame.evaluate(()=>document.querySelector('canvas')!.dispatchEvent(new Event('webglcontextlost',{cancelable:true})));
+  await expect(page.getByRole('button',{name:'Réessayer la salle 3D'})).toBeVisible();
+  await page.getByRole('button',{name:'Réessayer la salle 3D'}).click();
+  await expect(page.frameLocator('iframe[title="Salle d’audience 3D Lexora"]').locator('canvas')).toBeVisible();
+  await expect(page.locator('.courtroom-loading')).toBeHidden({timeout:90000});
+  frame=page.frames().find(f=>f.url().includes('/courtroom/index.html?embed=1'))!;
+  expect(await frame.evaluate('results.loaded.length')).toBe(9);
+  await page.getByLabel('Point de vue').selectOption('student');
+  await expect.poll(()=>frame.evaluate('viewMode')).toBe('student');
+  await page.screenshot({path:'test-results/courtroom-recovered.png',fullPage:true});
+  expect(errors).toEqual([]);
+});

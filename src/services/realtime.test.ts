@@ -49,6 +49,7 @@ async function fixture() {
   const states: ConnectionState[] = [];
   const events: TrialEvent[] = [];
   const error = vi.fn();
+  const progress=vi.fn();
   const fetch = vi.fn().mockResolvedValue(snapshot);
   const transport = new ServerTrialTransport(
     "trial-1",
@@ -58,13 +59,14 @@ async function fixture() {
       onSnapshot: () => {},
       onEvent: (e) => events.push(e),
       onError: error,
+      onProgress:progress,
     },
     () => socket as unknown as WebSocket,
   );
   await transport.connect();
   socket.open();
   await vi.waitFor(() => expect(states.at(-1)).toBe("ready"));
-  return { transport, socket, states, events, error, fetch };
+  return { transport, socket, states, events, error, fetch, progress };
 }
 it("attend une acceptation et préserve l’identifiant lors du réessai", async () => {
   const { transport, socket } = await fixture();
@@ -83,6 +85,29 @@ it("attend une acceptation et préserve l’identifiant lors du réessai", async
   await expect(sent).resolves.toBeUndefined();
   expect(JSON.parse(String(socket.sent[0])).clientMessageId).toBe("stable-id");
   transport.close();
+});
+it("attend une génération locale longue sans annoncer un échec prématuré",async()=>{
+  const {transport}=await fixture();
+  vi.useFakeTimers();
+  let completed=false;
+  const sent=transport.send({type:"user_text",text:"Argument"},"local-slow").then(()=>{completed=true;});
+  await vi.advanceTimersByTimeAsync(120000);
+  expect(completed).toBe(false);
+  transport.receive(JSON.stringify({type:"ack",clientMessageId:"local-slow",accepted:true}));
+  await sent;
+  expect(completed).toBe(true);
+  transport.close();
+});
+it("réserve le délai long uniquement au verdict en délibération",async()=>{
+  const {transport}=await fixture();
+  transport.receive(JSON.stringify({type:"phase_change",eventId:"deliberation",seq:1,step:5,allowedActions:["continue"]}));
+  vi.useFakeTimers();
+  let done=false;
+  const sent=transport.send({type:"continue"},"verdict-slow").then(()=>{done=true;});
+  await vi.advanceTimersByTimeAsync(180000);
+  expect(done).toBe(false);
+  transport.receive(JSON.stringify({type:"ack",clientMessageId:"verdict-slow",accepted:true}));
+  await sent;expect(done).toBe(true);transport.close();
 });
 it("ne rejoue pas un message après déconnexion", async () => {
   const { transport, socket } = await fixture();
@@ -177,4 +202,15 @@ it("conserve les événements reçus pendant le chargement du snapshot", async (
   await vi.waitFor(() => expect(states.at(-1)).toBe("ready"));
   expect(events).toHaveLength(1);
   transport.close();
+});
+
+it("keeps provisional text separate from durable events and correlates pending requests",async()=>{
+ const {transport,progress,events}=await fixture();
+ const done=transport.send({type:'user_text',text:'Argument'},'stream-id');
+ const frame={type:'processing',clientMessageId:'stream-id',stage:'generation',text:'Provisoire',elapsedMs:800};
+ transport.receive(JSON.stringify({...frame,clientMessageId:'foreign'}));expect(progress).not.toHaveBeenCalled();
+ transport.receive(JSON.stringify(frame));expect(progress).toHaveBeenCalledOnce();expect(events).toHaveLength(0);
+ transport.receive(JSON.stringify({...frame,text:'x'.repeat(2001)}));expect(progress).toHaveBeenCalledOnce();
+ transport.receive(JSON.stringify({type:'ack',clientMessageId:'stream-id',accepted:true}));await done;
+ transport.receive(JSON.stringify(frame));expect(progress).toHaveBeenCalledOnce();transport.close();
 });

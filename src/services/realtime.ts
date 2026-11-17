@@ -11,7 +11,9 @@ export type Command =
   | { type: "user_text"; text: string }
   | { type: "present_exhibit"; exhibitId: string }
   | { type: "continue" };
+export type ProcessingUpdate = {stage:"transcription"|"transcription_done"|"generation"|"complete";text?:string;elapsedMs:number};
 export type TransportCallbacks = {
+  onProgress?: (update:ProcessingUpdate)=>void;
   onState: (s: ConnectionState) => void;
   onSnapshot: (s: Snapshot) => void;
   onEvent: (e: TrialEvent) => void;
@@ -27,6 +29,7 @@ export class ServerTrialTransport {
   private seen = new Set<string>();
   private buffered: TrialEvent[] = [];
   private seq = 0;
+  private step = 0;
   private pending = new Map<
     string,
     {
@@ -56,6 +59,7 @@ export class ServerTrialTransport {
         throw new Error("L’adresse WebSocket n’a pas été fournie par Django.");
       this.cb.onSnapshot(snapshot);
       this.seq = snapshot.seq;
+      this.step = snapshot.step;
       const socket = this.socketFactory(websocketUrl(snapshot.websocketUrl));
       this.socket = socket;
       socket.onopen = () => {
@@ -93,6 +97,7 @@ export class ServerTrialTransport {
       if (snapshot.id !== this.trialId)
         throw new Error("Audience incohérente.");
       this.seq = snapshot.seq;
+      this.step = snapshot.step;
       this.cb.onSnapshot(snapshot);
       this.syncing = false;
       const buffered = this.buffered.sort((a, b) => a.seq - b.seq);
@@ -128,6 +133,15 @@ export class ServerTrialTransport {
     try {
       data = JSON.parse(raw);
     } catch {
+      return;
+    }
+    if(data && typeof data==='object' && 'type' in data && data.type==='processing') {
+      const p=data as Record<string,unknown>;
+      if(typeof p.clientMessageId==='string' && this.pending.has(p.clientMessageId) &&
+        ['transcription','transcription_done','generation','complete'].includes(String(p.stage)) &&
+        typeof p.elapsedMs==='number' && Number.isFinite(p.elapsedMs) && p.elapsedMs>=0 &&
+        (p.text===undefined || typeof p.text==='string' && p.text.length<=2000))
+        this.cb.onProgress?.({stage:p.stage as ProcessingUpdate['stage'],text:p.text as string|undefined,elapsedMs:p.elapsedMs});
       return;
     }
     const ack = ackSchema.safeParse(data);
@@ -170,6 +184,8 @@ export class ServerTrialTransport {
       return;
     }
     this.seq = value.seq;
+    if(value.type === "phase_change") this.step=value.step;
+    if(value.type === "snapshot") this.step=value.snapshot.step;
     this.seen.add(value.eventId);
     if (this.seen.size > 500)
       this.seen.delete(this.seen.values().next().value!);
@@ -185,6 +201,8 @@ export class ServerTrialTransport {
         timestamp: new Date().toISOString(),
       },
       clientMessageId,
+      undefined,
+      command.type === "continue" && this.step === 5 ? 210000 : 150000,
     );
   }
   sendAudio(blob: Blob, clientMessageId: string, accepted: string[]) {
@@ -210,7 +228,7 @@ export class ServerTrialTransport {
       blob,
     );
   }
-  private transmit(payload: unknown, id: string, binary?: Blob) {
+  private transmit(payload: unknown, id: string, binary?: Blob, timeoutMs = 150000) {
     if (
       this.disposed ||
       this.syncing ||
@@ -229,7 +247,7 @@ export class ServerTrialTransport {
             "Accusé de réception non reçu. Vous pouvez réessayer avec le même identifiant.",
           ),
         );
-      }, 60000); // STT plus generation may take up to 50s; the ack follows durable commit.
+      }, timeoutMs); // Verdict alone has a longer budget; normal replies retain 150s.
       this.pending.set(id, { resolve, reject, timer });
       try {
         this.socket!.send(JSON.stringify(payload));
